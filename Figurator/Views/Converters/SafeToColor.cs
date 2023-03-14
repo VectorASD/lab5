@@ -9,15 +9,15 @@ using System.Globalization;
 namespace Figurator.Views.Converters {
     internal class SafeToColor: IValueConverter {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
-            throw new Exception("Разве работает?"); // Не работает!!!!!!!!!!!!!!
+            throw new Exception("Р Р°Р·РІРµ СЂР°Р±РѕС‚Р°РµС‚?"); // РќРµ СЂР°Р±РѕС‚Р°РµС‚!!!!!!!!!!!!!!
 
-            return Colors.Blue; // И даже тут не работает!!!
+            return Colors.Blue; // Р РґР°Р¶Рµ С‚СѓС‚ РЅРµ СЂР°Р±РѕС‚Р°РµС‚!!!
 
             var app = Application.Current;
-            if (app == null) return null; // Такого просто не бывает, но надо ;'-}
+            if (app == null) return null; // РўР°РєРѕРіРѕ РїСЂРѕСЃС‚Рѕ РЅРµ Р±С‹РІР°РµС‚, РЅРѕ РЅР°РґРѕ ;'-}
             var mwvm = app.DataContext as MainWindowViewModel;
             if (mwvm == null) return null;
-            mwvm.ShapeName = "YEAH!"; // Не работает!
+            mwvm.ShapeName = "YEAH!"; // РќРµ СЂР°Р±РѕС‚Р°РµС‚!
 
 
             if (value == null) return null;
