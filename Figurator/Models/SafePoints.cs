@@ -4,16 +4,33 @@ using System;
 using System.Linq;
 
 namespace Figurator.Models {
-    public class SafePoints: ForcePropertyChange {
+    public class SafePoints: ForcePropertyChange, ISafe {
         private Points points = new();
         private bool valid = true;
         private readonly Action<object?>? hook;
         private readonly object? inst;
-        public SafePoints(Action<object?>? hook, object? inst) {
+        public SafePoints(string init, Action<object?>? hook, object? inst) {
             this.hook = hook; this.inst = inst;
+            Set(init);
+            if (!valid) throw new FormatException("Невалидный формат инициализации SafePoints: " + init);
+        }
+        public Points Points => points;
+
+        private void Upd_valid(bool v) {
+            valid = v;
+            hook?.Invoke(inst);
+        }
+        private void Re_check() {
+            if (!valid) {
+                valid = true;
+                //hook?.Invoke(inst);
+            }
         }
 
-        public Points Points => points;
+        /*
+         * ISafe-часть:
+         */
+
         public bool Valid => valid;
 
         public void Set(string str) {
@@ -22,24 +39,23 @@ namespace Figurator.Models {
                 if (p.Length == 0) continue;
 
                 var ss = p.Split(",");
-                if (ss == null || ss.Length != 2) { valid = false; return; }
+                if (ss == null || ss.Length != 2) { Upd_valid(false); return; }
 
                 int a, b;
                 try {
                     a = int.Parse(ss[0]);
                     b = int.Parse(ss[1]);
-                } catch { valid = false; return; }
+                } catch { Upd_valid(false); return; }
 
-                if (Math.Abs(a) > 10000 || Math.Abs(b) > 10000) { valid = false; return; }
+                if (Math.Abs(a) > 10000 || Math.Abs(b) > 10000) { Upd_valid(false); return; }
                 list.Add(new Point(a, b));
             }
             points = list;
-            valid = true;
-            hook?.Invoke(inst);
+            Upd_valid(true);
         }
 
         public string Value {
-            get { valid = true; return String.Join(" ", points.Select(p => p.X + "," + p.Y)); }
+            get { Re_check(); return String.Join(" ", points.Select(p => p.X + "," + p.Y)); }
             set {
                 Set(value);
                 UpdProperty(nameof(Color));

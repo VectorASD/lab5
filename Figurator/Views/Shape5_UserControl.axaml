@@ -31,11 +31,15 @@
 		</Border>
 
 		<TextBlock Grid.Row="2">Гориз. диагональ: </TextBlock>
-		<TextBox Name="textBoxWidth" Text="{Binding ShapeHorizDiagonal}" Grid.Row="2" Grid.Column="1"></TextBox>
-
+		<Border Background="{Binding ShapeHorizDiagonal.Color}" Grid.Row="2" Grid.Column="1">
+			<TextBox Name="textBoxWidth" Text="{Binding ShapeHorizDiagonal.Value}"/>
+		</Border>
+		
 		<TextBlock Grid.Row="3">Верт. диагональ: </TextBlock>
-		<TextBox Name="textBoxHeight" Text="{Binding ShapeVertDiagonal}" Grid.Row="3" Grid.Column="1"></TextBox>
-
+		<Border Background="{Binding ShapeVertDiagonal.Color}" Grid.Row="3" Grid.Column="1">
+			<TextBox Name="textBoxHeight" Text="{Binding ShapeVertDiagonal.Value}"/>
+		</Border>
+		
 		<TextBlock Grid.Row="4">Цвет линии: </TextBlock>
 		<ComboBox Name="comboBoxColor" SelectedItem="{Binding ShapeColor}" Grid.Row="4" Grid.Column="1" SelectedIndex="0" Items="{Binding ColorsArr}">
 			<ComboBox.ItemTemplate>

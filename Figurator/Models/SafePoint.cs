@@ -3,7 +3,7 @@ using Avalonia.Media;
 using System;
 
 namespace Figurator.Models {
-    public class SafePoint: ForcePropertyChange {
+    public class SafePoint: ForcePropertyChange, ISafe {
         private int X, Y;
         private bool valid = true;
         private readonly Action<object?>? hook;
@@ -11,25 +11,39 @@ namespace Figurator.Models {
         public SafePoint(int x, int y, Action<object?>? hook, object? inst) {
             X = x; Y = y; this.hook = hook; this.inst = inst;
         }
-
         public Point Point { get => new(X, Y); }
+
+        private void Upd_valid(bool v) {
+            valid = v;
+            hook?.Invoke(inst);
+        }
+        private void Re_check() {
+            if (!valid) {
+                valid = true;
+                //hook?.Invoke(inst);
+            }
+        }
+
+        /*
+         * ISafe-часть:
+         */
+
         public bool Valid => valid;
 
         public void Set(string str) {
             var ss = str.Split(",");
-            if (ss == null || ss.Length != 2) { valid = false; return; }
+            if (ss == null || ss.Length != 2) { Upd_valid(false); return; }
 
             int a, b;
             try {
                 a = int.Parse(ss[0]);
                 b = int.Parse(ss[1]);
-            } catch { valid = false; return; }
+            } catch { Upd_valid(false); return; }
 
-            if (Math.Abs(a) > 10000 || Math.Abs(b) > 10000) { valid = false; return; }
+            if (Math.Abs(a) > 10000 || Math.Abs(b) > 10000) { Upd_valid(false); return; }
 
             X = a; Y = b;
-            valid = true;
-            hook?.Invoke(inst);
+            Upd_valid(true);
         }
 
         /*private void check([CallerMemberName] string? propertyName = null) {
@@ -43,7 +57,7 @@ namespace Figurator.Models {
         }*/
 
         public string Value {
-            get { valid = true; return X + "," + Y; }
+            get { Re_check(); return X + "," + Y; }
             set {
                 Set(value);
                 // string res = ""; // Обычно для этого юзают StringBuilder, но это отладочный образец, так что не важно.

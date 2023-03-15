@@ -29,13 +29,17 @@
 		<Border Background="{Binding ShapeStartDot.Color}" Grid.Row="1" Grid.Column="1">
 			<TextBox Name="textBoxStart" Text="{Binding ShapeStartDot.Value}"/>
 		</Border>
-		
-		<TextBlock Grid.Row="2">Ширина: </TextBlock>
-		<TextBox Name="textBoxWidth" Text="{Binding ShapeWidth}" Grid.Row="2" Grid.Column="1"></TextBox>
-		
-		<TextBlock Grid.Row="3">Высота: </TextBlock>
-		<TextBox Name="textBoxHeight" Text="{Binding ShapeHeight}" Grid.Row="3" Grid.Column="1"></TextBox>
 
+		<TextBlock Grid.Row="2">Ширина: </TextBlock>
+		<Border Background="{Binding ShapeWidth.Color}" Grid.Row="2" Grid.Column="1">
+			<TextBox Name="textBoxWidth" Text="{Binding ShapeWidth.Value}"/>
+		</Border>
+
+		<TextBlock Grid.Row="3">Высота: </TextBlock>
+		<Border Background="{Binding ShapeHeight.Color}" Grid.Row="3" Grid.Column="1">
+			<TextBox Name="textBoxHeight" Text="{Binding ShapeHeight.Value}"/>
+		</Border>
+		
 		<TextBlock Grid.Row="4">Цвет линии: </TextBlock>
 		<ComboBox Name="comboBoxColor" SelectedItem="{Binding ShapeColor}" Grid.Row="4" Grid.Column="1" SelectedIndex="0" Items="{Binding ColorsArr}">
 			<ComboBox.ItemTemplate>

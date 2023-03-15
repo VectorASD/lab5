@@ -43,13 +43,13 @@
 	<DockPanel>
 		<Menu DockPanel.Dock="Top">
 			<MenuItem Header="Экспортировать" Name="menuExport">
-				<MenuItem Header="Экспортировать в PNG"/>
-				<MenuItem Header="Экспортировать в JSON"/>
-				<MenuItem Header="Экспортировать в XML"/>
+				<MenuItem Header="Экспортировать в PNG" Command="{Binding Export}" CommandParameter="PNG"/>
+				<MenuItem Header="Экспортировать в JSON" Command="{Binding Export}" CommandParameter="JSON"/>
+				<MenuItem Header="Экспортировать в XML" Command="{Binding Export}" CommandParameter="XML"/>
 			</MenuItem>
 			<MenuItem Header="Импортировать" Name="menuImport">
-				<MenuItem Header="Импортировать из JSON"/>
-				<MenuItem Header="Импортировать из XML"/>
+				<MenuItem Header="Импортировать из JSON" Command="{Binding Import}" CommandParameter="JSON"/>
+				<MenuItem Header="Импортировать из XML" Command="{Binding Import}" CommandParameter="XML"/>
 			</MenuItem>
 		</Menu>
 		<Grid ColumnDefinitions="2*,5*,*">
@@ -64,12 +64,14 @@
 						<ComboBoxItem>Составная фигура</ComboBoxItem>
 					</ComboBox>
 					<ContentControl Grid.Row="1" Grid.ColumnSpan="2" Content="{Binding Content}"/>
-					<Button Name="buttonAdd" Grid.Row="2">Добавить</Button>
-					<Button Name="buttonClear" Grid.Row="2" Grid.Column="1">Сброс</Button>
+					<Button Name="buttonAdd" Command="{Binding Add}" Background="{Binding AddColor}" Grid.Row="2">Добавить</Button>
+					<Button Name="buttonClear" Command="{Binding Clear}" Grid.Row="2" Grid.Column="1">Сброс</Button>
 				</Grid>
 			</Border>
 			<Border Grid.Column="1" Classes="b">
-				<Canvas Name="canvas" Background="AliceBlue"></Canvas>
+				<Canvas Name="canvas" Background="AliceBlue">
+					<TextBlock Text="{Binding Log}"/>
+				</Canvas>
 			</Border>
 			<Border Grid.Column="2" Classes="b">
 				<ListBox Name="listBoxShapes"></ListBox>
