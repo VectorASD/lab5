@@ -26,7 +26,9 @@
 		<TextBox Name="textBoxName" Text="{Binding ShapeName}" Grid.Column="1"></TextBox>
 
 		<TextBlock Grid.Row="1">Точки: </TextBlock>
-		<TextBox Name="textBoxPoints" Text="{Binding ShapeDots}" Grid.Row="1" Grid.Column="1"></TextBox>
+		<Border Background="{Binding ShapeDots.Color}" Grid.Row="1" Grid.Column="1">
+			<TextBox Name="textBoxPoints" Text="{Binding ShapeDots.Value}"/>
+		</Border>
 
 		<TextBlock Grid.Row="2">Цвет линии: </TextBlock>
 		<ComboBox Name="comboBoxColor" SelectedItem="{Binding ShapeColor}" Grid.Row="2" Grid.Column="1" SelectedIndex="0" Items="{Binding ColorsArr}">

@@ -23,20 +23,18 @@
 	
 	<Grid Margin="16" ColumnDefinitions="4*,6*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Classes="gr">
 		<TextBlock>Имя: </TextBlock>
-		<TextBox Name="textBoxName" Text="{Binding ShapeName}" Grid.Column="1"></TextBox>
+		<TextBox Name="textBoxName" Text="{Binding ShapeName}" Grid.Column="1"/>
 
 		<TextBlock Grid.Row="1">Начальная точка: </TextBlock>
-		<TextBox Name="textBoxStart"
-				 Text="{Binding ShapeStartDot, Converter={StaticResource S2T_converter}}"
-				 Background="{Binding ShapeStartDot, Converter={StaticResource S2C_converter}}"
-				 Grid.Row="1" Grid.Column="1"/>
-
+		<Border Background="{Binding ShapeStartDot.Color}" Grid.Row="1" Grid.Column="1">
+			<TextBox Name="textBoxStart" Text="{Binding ShapeStartDot.Value}"/>
+		</Border>
+		
 		<TextBlock Grid.Row="2">Конечная точка: </TextBlock>
-		<TextBox Name="textBoxEnd"
-				 Text="{Binding ShapeEndDot, Converter={StaticResource S2T_converter}}"
-				 Background="{Binding ShapeEndDot, Converter={StaticResource S2C_converter}}"
-				 Grid.Row="2" Grid.Column="1"/>
-
+		<Border Background="{Binding ShapeEndDot.Color}" Grid.Row="2" Grid.Column="1">
+			<TextBox Name="textBoxEnd" Text="{Binding ShapeEndDot.Value}"/>
+		</Border>
+		
 		<TextBlock Grid.Row="3">Цвет линии: </TextBlock>
 		<ComboBox Name="comboBoxColor" SelectedItem="{Binding ShapeColor}" Grid.Row="3" Grid.Column="1" SelectedIndex="0" Items="{Binding ColorsArr}">
 			<ComboBox.ItemTemplate>

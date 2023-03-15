@@ -13,7 +13,6 @@
     </Application.Styles>
 
 	<Application.Resources>
-		<conv:SafeToText x:Key="S2T_converter"/>
 		<conv:SafeToColor x:Key="S2C_converter"/>
 	</Application.Resources>
 </Application>

@@ -26,7 +26,9 @@
 		<TextBox Name="textBoxName" Text="{Binding ShapeName}" Grid.Column="1"></TextBox>
 
 		<TextBlock Grid.Row="1">Центральная точка: </TextBlock>
-		<TextBox Name="textBoxStart" Text="{Binding ShapeCenterDot}" Grid.Row="1" Grid.Column="1"></TextBox>
+		<Border Background="{Binding ShapeCenterDot.Color}" Grid.Row="1" Grid.Column="1">
+			<TextBox Name="textBoxStart" Text="{Binding ShapeCenterDot.Value}"/>
+		</Border>
 
 		<TextBlock Grid.Row="2">Гориз. диагональ: </TextBlock>
 		<TextBox Name="textBoxWidth" Text="{Binding ShapeHorizDiagonal}" Grid.Row="2" Grid.Column="1"></TextBox>
