@@ -1,15 +1,18 @@
 ﻿using Avalonia;
+using Avalonia.Controls.Shapes;
 using Figurator.Models.Shapes;
+using Figurator.ViewModels;
 using System;
+using System.Collections.Generic;
 using static Figurator.Models.Shapes.PropsN;
 
 namespace Figurator.Models {
     public class Mapper {
         public string shapeName = "Линия 1";
 
-        public string shapeColor = "Aqua";
+        public string shapeColor = "Blue";
         public string shapeFillColor = "Yellow";
-        public int shapeThickness = 1;
+        public int shapeThickness = 2;
 
         public SafeNum shapeWidth;
         public SafeNum shapeHeight;
@@ -22,7 +25,7 @@ namespace Figurator.Models {
 
         public SafePoints shapeDots;
 
-        public string shapeCommands = "M 0,0 c 0,0 50,0 50,-50 c 0,0 50,0 50,50 h -50 v 50 l -50,-50 Z";
+        public SafeGeometry shapeCommands;
 
         private readonly Action<object?>? UPD;
         private readonly object? INST;
@@ -39,6 +42,19 @@ namespace Figurator.Models {
 
             shapeDots = new("50,50 100,100 50,100 100,50", Update, this);
 
+            shapeCommands = new("M 10 70 l 30,30 10,10 35,0 0,-35 m 50 0 l 0,-50 10,0 35,35 m 50 0 l 0,-50 10,0 35,35z m 70 0 l 0,30 30,0 5,-35z", Update, this);
+            /* 
+             * Вывод: какой-то Geometry недоделанный...:
+             * 1.) Geometry.Stringify нет :///////////////,
+             * 2.) у Geometry.Parse нет второго параметра типа bool,
+             * 3.) F x u штучки не поддерживаются :///, что позволяют добавлять всяки тени, отключать заливку и т.д...
+             *      F - включает тень
+             *      u - отрубает отрисовку заливки
+             *      x - сбрасывает выше-перечисленные параметры
+             * Возможно я GoDiagram абилку путаю с ванильной авалонией))) Ток ща заметил, что это не совсем та авалония... ;'-}
+             * 4.) А, и ещё... НЕТ НОРМАЛИЗАЦИИ!!! :/// А, фух! M-параметр является глобальным! ;'-}
+             */
+
             UPD = upd;
             INST = inst;
         }
@@ -53,8 +69,15 @@ namespace Figurator.Models {
         };
 
         private IShape cur_shape = Shapes[0];
+        private readonly Dictionary<string, Shape> shape_dict = new();
+        public string? newName = null;
+        public void ChangeFigure(int n) {
+            cur_shape = Shapes[n];
+            shapeName = GenName(cur_shape.Name);
+            Update();
+        }
 
-        private object GetProp(PropsN num) {
+        internal object GetProp(PropsN num) {
             return num switch {
                 PName => shapeName,
                 PColor => shapeColor,
@@ -78,9 +101,26 @@ namespace Figurator.Models {
                 if (GetProp(num) is ISafe @prop && !@prop.Valid) return false;
             return true;
         }
+        public bool ValidName() => !shape_dict.ContainsKey(shapeName);
 
-        public void Create() {
+        private string GenName(string prefix) {
+            prefix += " ";
+            int n = 1;
+            while (true) {
+                string res = prefix + n;
+                if (!shape_dict.ContainsKey(res)) return res;
+                n += 1;
+            }
+        }
+        public Shape? Create(bool preview) {
+            Shape? newy = cur_shape.Build(this);
+            if (newy == null) return null;
+            if (preview) return newy;
 
+            shape_dict[shapeName] = newy;
+
+            newName = GenName(cur_shape.Name);
+            return newy;
         }
 
         private void Update() {

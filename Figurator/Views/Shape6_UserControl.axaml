@@ -23,10 +23,14 @@
 	
 	<Grid Margin="16" ColumnDefinitions="4*,6*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Classes="gr">
 		<TextBlock>Имя: </TextBlock>
-		<TextBox Name="textBoxName" Text="{Binding ShapeName}" Grid.Column="1"></TextBox>
+		<Border Background="{Binding ShapeNameColor}" Grid.Column="1">
+			<TextBox Name="textBoxName" Text="{Binding ShapeName}"/>
+		</Border>
 
 		<TextBlock Grid.Row="1">Команды: </TextBlock>
-		<TextBox Name="textBoxCommandPath" Text="{Binding ShapeCommands}" Grid.Row="1" Grid.Column="1"></TextBox>
+		<Border Background="{Binding ShapeCommands.Color}" Grid.Row="1" Grid.Column="1">
+			<TextBox Name="textBoxCommandPath" Text="{Binding ShapeCommands.Value}"></TextBox>
+		</Border>
 
 		<TextBlock Grid.Row="2">Цвет линии: </TextBlock>
 		<ComboBox Name="comboBoxColor" SelectedItem="{Binding ShapeColor}" Grid.Row="2" Grid.Column="1" SelectedIndex="0" Items="{Binding ColorsArr}">

@@ -9,8 +9,8 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+	<AvaloniaResource Include="Styles\**" />
     <None Remove=".gitignore" />
-    <None Remove="Assets\vectorasd-logo.ico" />
   </ItemGroup>
 
   <ItemGroup>

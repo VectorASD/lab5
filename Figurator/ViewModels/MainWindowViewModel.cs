@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
@@ -6,7 +7,6 @@ using Figurator.Models;
 using Figurator.Views;
 using ReactiveUI;
 using System;
-using System.Net.Http;
 using System.Reactive;
 
 namespace Figurator.ViewModels {
@@ -14,6 +14,7 @@ namespace Figurator.ViewModels {
         private UserControl content;
         private int shape_n = 0;
         private readonly Mapper map;
+        private readonly Canvas canv;
 
         private readonly UserControl[] contentArray = new UserControl[] {
             new Shape1_UserControl(),
@@ -31,11 +32,36 @@ namespace Figurator.ViewModels {
         private IBrush add_color = Brushes.White;
         public IBrush AddColor { get => add_color; set => this.RaiseAndSetIfChanged(ref add_color, value); }
 
+        private Shape? animated_part = null;
         private void Update() {
             bool valid = map.ValidInput();
+            bool valid2 = map.ValidName();
             // Log += "Update: " + valid;
-            is_enabled = valid;
-            AddColor = valid ? Brushes.Lime : Brushes.Pink;
+
+            is_enabled = valid & valid2;
+
+            AddColor = is_enabled ? Brushes.Lime : Brushes.Pink;
+            ShapeNameColor = valid2 ? Brushes.Lime : Brushes.Pink;
+
+            if (map.newName != null) {
+                var name = map.newName;
+                map.newName = null; // Подавил опасность рекурсивного зацикливания Update'ов ;'-}
+                ShapeName = name;
+            }
+
+            if (animated_part != null) {
+                canv.Children.Remove(animated_part);
+                animated_part = null;
+            }
+
+            if (is_enabled) {
+                Shape? newy = map.Create(true);
+                if (newy != null) {
+                    newy.Classes.Add("anim");
+                    canv.Children.Add(newy);
+                    animated_part = newy;
+                }
+            }
         }
         private static void Update(object? inst) {
             if (inst != null && inst is MainWindowViewModel @mwvm) @mwvm.Update();
@@ -44,26 +70,18 @@ namespace Figurator.ViewModels {
         public MainWindowViewModel(MainWindow mw) {
             content = contentArray[0];
             map = new(Update, this);
+            canv = mw.Find<Canvas>("canvas");
             Update();
 
             Add = ReactiveCommand.Create<Unit, Unit>(_ => { FuncAdd(); return new Unit(); });
             Clear = ReactiveCommand.Create<Unit, Unit>(_ => { FuncClear(); return new Unit(); });
             Export = ReactiveCommand.Create<string, Unit>(n => { FuncExport(n); return new Unit(); });
             Import = ReactiveCommand.Create<string, Unit>(n => { FuncImport(n); return new Unit(); });
-
-            var canv = mw.Find<Canvas>("canvas");
-            var newy = new Line {
-                StartPoint = new Point(50, 50),
-                EndPoint = new Point(100, 100),
-                Stroke = Brushes.Blue,
-                StrokeThickness = 1
-            };
-            canv.Children.Add(newy);
         }
 
         public int SelectedShape {
             get => shape_n;
-            set { shape_n = value; Content = contentArray[value]; Update(); }
+            set { shape_n = value; map.ChangeFigure(value); Content = contentArray[value]; }
         }
 
         public UserControl Content {
@@ -78,7 +96,12 @@ namespace Figurator.ViewModels {
         private void FuncAdd() {
             if (!is_enabled) return;
             Log += "Add";
-            map.Create();
+
+            Shape? newy = map.Create(false);
+            if (newy == null) return;
+
+            canv.Children.Add(newy);
+            Update();
         }
         private void FuncClear() {
             Log += "Clear";
@@ -99,11 +122,13 @@ namespace Figurator.ViewModels {
          * Просто параметры фигур:
          */
 
-        public string ShapeName { get => map.shapeName; set { this.RaiseAndSetIfChanged(ref map.shapeName, value); /*map.update();*/ } }
-        
-        public string ShapeColor { get => map.shapeColor; set { this.RaiseAndSetIfChanged(ref map.shapeColor, value); } }
-        public string ShapeFillColor { get => map.shapeFillColor; set { this.RaiseAndSetIfChanged(ref map.shapeFillColor, value); } }
-        public int ShapeThickness { get => map.shapeThickness; set { this.RaiseAndSetIfChanged(ref map.shapeThickness, value); } }
+        private IBrush nameColor = Brushes.White;
+        public string ShapeName { get => map.shapeName; set { this.RaiseAndSetIfChanged(ref map.shapeName, value); Update(); } }
+        public IBrush ShapeNameColor { get => nameColor; set => this.RaiseAndSetIfChanged(ref nameColor, value); }
+
+        public string ShapeColor { get => map.shapeColor; set { this.RaiseAndSetIfChanged(ref map.shapeColor, value); Update(); } }
+        public string ShapeFillColor { get => map.shapeFillColor; set { this.RaiseAndSetIfChanged(ref map.shapeFillColor, value); Update(); } }
+        public int ShapeThickness { get => map.shapeThickness; set { this.RaiseAndSetIfChanged(ref map.shapeThickness, value); Update(); } }
 
         public SafeNum ShapeWidth => map.shapeWidth;
         public SafeNum ShapeHeight => map.shapeHeight; 
@@ -115,7 +140,7 @@ namespace Figurator.ViewModels {
         public SafePoint ShapeCenterDot => map.shapeCenterDot;
         public SafePoints ShapeDots => map.shapeDots;
 
-        public string ShapeCommands { get => map.shapeCommands; set { this.RaiseAndSetIfChanged(ref map.shapeCommands, value); } }
+        public SafeGeometry ShapeCommands => map.shapeCommands;
 
         /*
          * База цветов
