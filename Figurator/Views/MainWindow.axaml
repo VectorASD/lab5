@@ -40,6 +40,10 @@
 		</Style>
 
 		<StyleInclude Source="/Styles/Animation.axaml"/>
+
+		<Style Selector="ListBoxItem">
+			<Setter Property="Padding" Value="5 1"/>
+		</Style>
 	</Window.Styles>
 
 	<DockPanel>
@@ -71,11 +75,10 @@
 				</Grid>
 			</Border>
 			<Border Grid.Column="1" Classes="b">
-				<Canvas Background="AliceBlue">
+				<Panel Background="AliceBlue">
 					<Canvas Name="canvas"/>
-					<!-- Холст в холсте, а TextBox отделён, чтобы очистка canvas не повредило это: -->
 					<TextBlock Text="{Binding Logg}" IsVisible="{Binding ServiceVisible}"/>
-				</Canvas>
+				</Panel>
 			</Border>
 			<Border Grid.Column="2" Classes="b">
 				<ListBox Name="listBoxShapes" Items="{Binding Shapes}">

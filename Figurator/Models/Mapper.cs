@@ -176,24 +176,31 @@ namespace Figurator.Models {
                 }
                 if (R) Log.Write("Потеряна одна из фигур при экспортировании :/");
             }
-            var json = Utils.Obj2json(data);
-            //var xml = Utils.Json2xml(json);
-
-            Log.Write("J: " + json);
-            //Log.Write("J: " + Utils.Xml2json(xml));
-
-            File.WriteAllText("../../../Export.json", json);
+            if (is_xml) {
+                var xml = Utils.Obj2xml(data);
+                if (xml == null) { Log.Write("Не удалось экспортировать в Export.xml :/"); return; }
+                // Log.Write("X: " + xml);
+                File.WriteAllText("../../../Export.xml", xml);
+            } else {
+                var json = Utils.Obj2json(data);
+                if (json == null) { Log.Write("Не удалось экспортировать в Export.json :/"); return; }
+                // Log.Write("J: " + json);
+                File.WriteAllText("../../../Export.json", json);
+            }
         }
 
         public Shape[]? Import(bool is_xml) {
-            if (!File.Exists("../../../Export.json")) { Log.Write("Export.json не обнаружен"); return null; }
-            var data = File.ReadAllText("../../../Export.json");
-            var json = Utils.Json2obj(data);
-            if (json is not List<object?> @list) { Log.Write("В начале Export.json не список"); return null; }
+            string name = is_xml ? "Export.xml" : "Export.json";
+            if (!File.Exists("../../../" + name)) { Log.Write(name + " не обнаружен"); return null; }
+
+            var data = File.ReadAllText("../../../" + name);
+            // Log.Write("data: " + (is_xml ? Utils.Xml2json(data) : data));
+
+            var json = is_xml ? Utils.Xml2obj(data) : Utils.Json2obj(data);
+            if (json is not List<object?> @list) { Log.Write("В начале " + name + " не список"); return null; }
 
             List<Shape> res = new();
-            shape_dict.Clear();
-            shapes.Clear();
+            Clear();
 
             foreach (object? item in @list) {
                 if (item is not Dictionary<string, object?> @dict) { Log.Write("Одна из фигур при импорте - не словарь"); continue; }

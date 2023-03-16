@@ -10,10 +10,15 @@ using Avalonia;
 using Avalonia.Media;
 using System.Text.Json;
 using Figurator.ViewModels;
+using HarfBuzzSharp;
 
 namespace Figurator.Models {
     public class Utils {
         // By VectorASD         Всё это моих рук дела! ;'-}
+
+        /*
+         * Base64 абилка
+         */
 
         public static string Base64Encode(string plainText) {
             var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
@@ -24,7 +29,9 @@ namespace Figurator.Models {
             return Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
-
+        /*
+         * JSON абилка
+         */
 
         public static string JsonEscape(string str) {
             StringBuilder sb = new();
@@ -141,21 +148,141 @@ namespace Figurator.Models {
             return JsonHandler(data);
         }
 
+        /*
+         * XML абилка
+         */
 
-
-        private static Dictionary<string, object> GetXmlData(XElement xml) {
-            var attr = xml.Attributes().ToDictionary(d => d.Name.LocalName, d => (object) d.Value);
-            if (xml.HasElements) attr.Add("_value", xml.Elements().Select(GetXmlData));
-            else if (!xml.IsEmpty) attr.Add("_value", xml.Value);
-
-            return new Dictionary<string, object> { { xml.Name.LocalName, attr } };
+        public static string XMLEscape(string str) {
+            StringBuilder sb = new();
+            foreach (char i in str) {
+                sb.Append(i switch {
+                    '"' => "&quot;",
+                    '\'' => "&apos;",
+                    '>' => "&gt;",
+                    '<' => "&lt;",
+                    '&' => "&amp;",
+                    _ => i
+                });
+            }
+            return sb.ToString();
         }
 
-        public static string Json2xml(string json) => XDocument.Load(JsonReaderWriterFactory.CreateJsonReader(Encoding.UTF8.GetBytes(json), new XmlDictionaryReaderQuotas())).ToString();
-        public static object Xml2obj(string xml) => GetXmlData(XElement.Parse(xml));
-        public static string Xml2json(string xml) => Obj2json(GetXmlData(XElement.Parse(xml)));
+        private static bool IsComposite(object? obj) {
+            if (obj == null) return false;
+            if (obj is List<object?> || obj is Dictionary<string, object?> || obj is not JsonElement @item) return true;
+            var T = @item.ValueKind;
+            return T == JsonValueKind.Object || T == JsonValueKind.Array;
+        }
+        private static string Dict2XML(Dictionary<string, object?> dict, string level) {
+            StringBuilder attrs = new();
+            StringBuilder items = new();
+            foreach (var entry in dict)
+                if (IsComposite(entry.Value))
+                    items.Append("<" + entry.Key + ">" + ToXMLHandler(entry.Value, level + "\t") + "</" + entry.Key + ">");
+                else attrs.Append(" " + entry.Key + "=\"" + entry.Value + "\"");
 
+            if (items.Length == 0) return level + "<Dict" + attrs.ToString() + "/>";
+            return level + "<Dict" + attrs.ToString() + ">" + items.ToString() + level + "</Dict>";
+        }
+        private static string List2XML(List<object?> list, string level) {
+            StringBuilder attrs = new();
+            StringBuilder items = new();
+            foreach (var entry in list)
+                if (IsComposite(entry)) items.Append(ToXMLHandler(entry, level + "\t"));
+                else attrs.Append(" " + entry);
 
+            if (items.Length == 0) return level + "<List" + attrs.ToString() + "/>";
+            return level + "<List" + attrs.ToString() + ">" + items.ToString() + level + "</List>";
+        }
+
+        private static string ToXMLHandler(object? obj, string level) {
+            if (obj == null) return "null";
+
+            if (obj is List<object?> @list) return List2XML(@list, level);
+            if (obj is Dictionary<string, object?> @dict) return Dict2XML(@dict, level);
+            if (obj is JsonElement @item) {
+                switch (@item.ValueKind) {
+                case JsonValueKind.Undefined: return "undefined";
+                case JsonValueKind.Object:
+                    return Dict2XML(new Dictionary<string, object?>(@item.EnumerateObject().Select(pair => new KeyValuePair<string, object?>(pair.Name, pair.Value))), level);
+                case JsonValueKind.Array: // Неиспытано ещё
+                    return List2XML(@item.EnumerateObject().Select(item => (object?) item.Value).ToList(), level);
+                case JsonValueKind.String:
+                    var s = XMLEscape(@item.GetString() ?? "");
+                    // Log.Write("XS: '" + @item.GetString() + "' -> '" + s + "'");
+                    return s;
+                case JsonValueKind.Number: return @item.ToString();
+                case JsonValueKind.True: return "yeah";
+                case JsonValueKind.False: return "nop";
+                case JsonValueKind.Null: return "null";
+                }
+            }
+            Log.Write("XT: " + obj.GetType());
+
+            return "<UnknowType>" + obj.GetType() + "</UnknowType>";
+        }
+        public static string? Json2xml(string json) {
+            json = json.Trim();
+            if (json.Length == 0) return null;
+
+            object? data;
+            if (json[0] == '[') data = JsonSerializer.Deserialize<List<object?>>(json);
+            else if (json[0] == '{') data = JsonSerializer.Deserialize<Dictionary<string, object?>>(json);
+            else return null;
+
+            return "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + ToXMLHandler(data, "\n");
+        }
+
+        private static string ToJSONHandler(string str) {
+            if (str.Length > 0 && str[0] >= '0' && str[0] <= '9') return str;
+            return str switch {
+                "null" => "null",
+                "undefined" => "undefined",
+                "yeah" => "true",
+                "false" => "false",
+                _ => '"' + str + '"',
+            };
+        }
+        private static string ToJSONHandler(XElement xml) {
+            var name = xml.Name.LocalName;
+            StringBuilder sb = new();
+            if (name == "Dict") {
+                sb.Append('{');
+                foreach (var attr in xml.Attributes()) {
+                    if (sb.Length > 1) sb.Append(", ");
+                    sb.Append(ToJSONHandler(attr.Name.LocalName));
+                    sb.Append(": ");
+                    sb.Append(ToJSONHandler(attr.Value));
+                }
+                foreach (var el in xml.Elements()) {
+                    if (sb.Length > 1) sb.Append(", ");
+                    sb.Append(ToJSONHandler(el.Name.LocalName));
+                    sb.Append(": ");
+                    sb.Append(ToJSONHandler(el));
+                }
+                sb.Append('}');
+            } else if (name == "List") {
+                sb.Append('[');
+                foreach (var attr in xml.Attributes()) {
+                    if (sb.Length > 1) sb.Append(", ");
+                    sb.Append(ToJSONHandler(attr.Name.LocalName));
+                }
+                foreach (var el in xml.Elements()) {
+                    if (sb.Length > 1) sb.Append(", ");
+                    sb.Append(ToJSONHandler(el));
+                }
+                sb.Append(']');
+            }
+            return sb.ToString();
+        }
+        public static string Xml2json(string xml) => ToJSONHandler(XElement.Parse(xml));
+
+        /*
+         * Misc
+         */
+
+        public static string? Obj2xml(object? obj) => Json2xml(Obj2json(obj)); // Чёт припомнилось свойство транзитивности с дискретной матеши...
+        public static object? Xml2obj(string xml) => Json2obj(Xml2json(xml));
 
         public static void RenderToFile(Control tar, string path) {
             var target = (Control?) tar.Parent;
