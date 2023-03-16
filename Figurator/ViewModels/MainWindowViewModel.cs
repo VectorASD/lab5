@@ -1,15 +1,22 @@
-﻿using Avalonia;
-using Avalonia.Animation;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Figurator.Models;
 using Figurator.Views;
 using ReactiveUI;
 using System;
+using System.Collections.ObjectModel;
 using System.Reactive;
 
 namespace Figurator.ViewModels {
+    public class Log {
+        public static MainWindowViewModel? mwvm;
+        public static void Write(string message) {
+            if (mwvm != null) mwvm.Logg += message;
+        }
+    }
+
     public class MainWindowViewModel: ViewModelBase {
         private UserControl content;
         private int shape_n = 0;
@@ -26,7 +33,7 @@ namespace Figurator.ViewModels {
         };
 
         private string log = "";
-        public string Log { get => log; set => this.RaiseAndSetIfChanged(ref log, value + "\n"); }
+        public string Logg { get => log; set => this.RaiseAndSetIfChanged(ref log, value + "\n"); }
 
         private bool is_enabled = true;
         private IBrush add_color = Brushes.White;
@@ -68,6 +75,7 @@ namespace Figurator.ViewModels {
         }
 
         public MainWindowViewModel(MainWindow mw) {
+            Log.mwvm = this;
             content = contentArray[0];
             map = new(Update, this);
             canv = mw.Find<Canvas>("canvas");
@@ -95,7 +103,7 @@ namespace Figurator.ViewModels {
 
         private void FuncAdd() {
             if (!is_enabled) return;
-            Log += "Add";
+            // Log += "Add";
 
             Shape? newy = map.Create(false);
             if (newy == null) return;
@@ -103,14 +111,28 @@ namespace Figurator.ViewModels {
             canv.Children.Add(newy);
             Update();
         }
-        private void FuncClear() {
-            Log += "Clear";
-        }
+        private void FuncClear() => map.Clear();
         private void FuncExport(string Type) {
-            Log += "Export: " + Type;
+            if (Type == "PNG") {
+                ServiceVisible = false;
+                if (animated_part != null) animated_part.IsVisible = false;
+
+                try {
+                    Utils.RenderToFile(canv, "../../../Export.png");
+                } catch (Exception e) {
+                    Log.Write("Ошибка экспорта PNG: " + e);
+                }
+
+                ServiceVisible = true;
+                if (animated_part != null) animated_part.IsVisible = true;
+            } else map.Export(Type == "XML");
         }
         private void FuncImport(string Type) {
-            Log += "Import: " + Type;
+            Shape[]? beginners = map.Import(Type == "XML");
+            if (beginners == null) return;
+
+            foreach (var beginner in beginners) canv.Children.Add(beginner);
+            Update();
         }
 
         public ReactiveCommand<Unit, Unit> Add { get; }
@@ -154,5 +176,14 @@ namespace Figurator.ViewModels {
             "White", "LightGray", "DarkGray", "Black"
         };
         public static string[] ColorsArr { get => colors; }
+
+        /*
+         * Список фигурок и видимость маркетной фигуры (на практике у неё меняется IsVisible на прямую) + TextBlock логов
+         */
+
+        public ObservableCollection<ShapeListBoxItem> Shapes { get => map.shapes; }
+
+        private bool service_visible = true;
+        public bool ServiceVisible { get => service_visible; set => this.RaiseAndSetIfChanged(ref service_visible, value); }
     }
 }

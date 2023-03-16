@@ -1,5 +1,7 @@
-﻿using Avalonia.Controls.Shapes;
+﻿using Avalonia;
+using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using System.Collections.Generic;
 using static Figurator.Models.Shapes.PropsN;
 
 namespace Figurator.Models.Shapes {
@@ -15,11 +17,13 @@ namespace Figurator.Models.Shapes {
         public string Name => "Эллипс";
 
         public Shape? Build(Mapper map) {
+            if (map.GetProp(PName) is not string @name) return null;
+
             if (map.GetProp(PCenterDot) is not SafePoint @center || !@center.Valid) return null;
 
-            if (map.GetProp(PWidth) is not SafeNum @width || !@width.Valid) return null;
+            if (map.GetProp(PVertDiagonal) is not SafeNum @width || !@width.Valid) return null;
 
-            if (map.GetProp(PHeight) is not SafeNum @height || !@height.Valid) return null;
+            if (map.GetProp(PHorizDiagonal) is not SafeNum @height || !@height.Valid) return null;
 
             if (map.GetProp(PColor) is not string @color) return null;
 
@@ -32,11 +36,50 @@ namespace Figurator.Models.Shapes {
             int h = @height.Num;
 
             return new Ellipse {
+                Name = "sn_" + @name,
                 Margin = new(p.X - w/2, p.Y - h/2, 0, 0), // А это совсем читы пошли))) Rectangle отдыхает :D 
                 Width = w,
                 Height = h,
                 Stroke = new SolidColorBrush(Color.Parse(@color)),
                 Fill = new SolidColorBrush(Color.Parse(@fillColor)),
+                StrokeThickness = @thickness
+            };
+        }
+
+
+
+        public Dictionary<string, object?>? Export(Shape shape) {
+            if (shape is not Ellipse @ellipse) return null;
+            if (@ellipse.Name == null || !@ellipse.Name.StartsWith("sn_")) return null;
+
+            return new() {
+                ["name"] = @ellipse.Name[3..],
+                ["margin"] = @ellipse.Margin,
+                ["width"] = (short) @ellipse.Width,
+                ["height"] = (short) @ellipse.Height,
+                ["stroke"] = @ellipse.Stroke,
+                ["fill"] = @ellipse.Fill,
+                ["thickness"] = (short) @ellipse.StrokeThickness
+            };
+        }
+        public Shape? Import(Dictionary<string, object?> data) {
+            if (!data.ContainsKey("name") || data["name"] is not string @name) return null;
+
+            if (!data.ContainsKey("margin") || data["margin"] is not Thickness @margin) return null;
+            if (!data.ContainsKey("width") || data["width"] is not short @width) return null;
+            if (!data.ContainsKey("height") || data["height"] is not short @height) return null;
+
+            if (!data.ContainsKey("stroke") || data["stroke"] is not SolidColorBrush @color) return null;
+            if (!data.ContainsKey("fill") || data["fill"] is not SolidColorBrush @fillColor) return null;
+            if (!data.ContainsKey("thickness") || data["thickness"] is not short @thickness) return null;
+
+            return new Ellipse {
+                Name = "sn_" + @name,
+                Margin = @margin,
+                Width = @width,
+                Height = @height,
+                Stroke = @color,
+                Fill = @fillColor,
                 StrokeThickness = @thickness
             };
         }

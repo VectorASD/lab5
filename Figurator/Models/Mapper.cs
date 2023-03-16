@@ -1,9 +1,12 @@
-﻿using Avalonia;
+﻿using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Figurator.Models.Shapes;
 using Figurator.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using static Figurator.Models.Shapes.PropsN;
 
 namespace Figurator.Models {
@@ -29,6 +32,8 @@ namespace Figurator.Models {
 
         private readonly Action<object?>? UPD;
         private readonly object? INST;
+
+        public readonly ObservableCollection<ShapeListBoxItem> shapes = new();
 
         public Mapper(Action<object?>? upd, object? inst) {
             shapeWidth = new(200, Update, this);
@@ -59,7 +64,7 @@ namespace Figurator.Models {
             INST = inst;
         }
 
-        private static IShape[] Shapes => new IShape[] {
+        private static IShape[] Shapers => new IShape[] {
             new Shape1_Line(),
             new Shape2_BreakedLine(),
             new Shape3_Polygonal(),
@@ -67,13 +72,14 @@ namespace Figurator.Models {
             new Shape5_Ellipse(),
             new Shape6_CompositeFigure(),
         };
+        private static Dictionary<string, IShape> TShapers => new(Shapers.Select(shaper => new KeyValuePair<string, IShape>(shaper.Name, shaper)));
 
-        private IShape cur_shape = Shapes[0];
+        private IShape cur_shaper = Shapers[0];
         private readonly Dictionary<string, Shape> shape_dict = new();
         public string? newName = null;
         public void ChangeFigure(int n) {
-            cur_shape = Shapes[n];
-            shapeName = GenName(cur_shape.Name);
+            cur_shaper = Shapers[n];
+            shapeName = GenName(cur_shaper.Name);
             Update();
         }
 
@@ -97,7 +103,7 @@ namespace Figurator.Models {
         }
 
         public bool ValidInput() {
-            foreach (PropsN num in cur_shape.Props)
+            foreach (PropsN num in cur_shaper.Props)
                 if (GetProp(num) is ISafe @prop && !@prop.Valid) return false;
             return true;
         }
@@ -113,14 +119,102 @@ namespace Figurator.Models {
             }
         }
         public Shape? Create(bool preview) {
-            Shape? newy = cur_shape.Build(this);
+            Shape? newy = cur_shaper.Build(this);
             if (newy == null) return null;
             if (preview) return newy;
 
             shape_dict[shapeName] = newy;
+            shapes.Add(new ShapeListBoxItem(shapeName, this));
 
-            newName = GenName(cur_shape.Name);
+            newName = GenName(cur_shaper.Name);
             return newy;
+        }
+
+        internal void Remove(ShapeListBoxItem item) {
+            var Name = item.Name;
+            if (!shape_dict.ContainsKey(Name)) return;
+
+            var shape = shape_dict[Name];
+            if (shape == null || shape.Parent is not Canvas @c) return;
+
+            @c.Children.Remove(shape);
+            shapes.Remove(item);
+            shape_dict.Remove(Name);
+
+            newName = GenName(cur_shaper.Name);
+            Update();
+        }
+
+        public void Clear() {
+            foreach (var item in shape_dict) {
+                var shape = item.Value;
+                if (shape == null || shape.Parent is not Canvas @c) continue;
+                @c.Children.Clear();
+            }
+            shapes.Clear();
+            shape_dict.Clear();
+
+            newName = GenName(cur_shaper.Name);
+            Update();
+        }
+
+        public void Export(bool is_xml) {
+            List<object> data = new();
+            foreach (var item in shape_dict) {
+                var shape = item.Value;
+                // Log.Write("shape: " + shape);
+                bool R = true;
+                foreach (var shaper in Shapers) {
+                    var res = shaper.Export(shape);
+                    // Log.Write("  res: " + res);
+                    if (res != null) {
+                        res["type"] = shaper.Name;
+                        data.Add(res);
+                        R = false;
+                        break;
+                    }
+                }
+                if (R) Log.Write("Потеряна одна из фигур при экспортировании :/");
+            }
+            var json = Utils.Obj2json(data);
+            //var xml = Utils.Json2xml(json);
+
+            Log.Write("J: " + json);
+            //Log.Write("J: " + Utils.Xml2json(xml));
+
+            File.WriteAllText("../../../Export.json", json);
+        }
+
+        public Shape[]? Import(bool is_xml) {
+            if (!File.Exists("../../../Export.json")) { Log.Write("Export.json не обнаружен"); return null; }
+            var data = File.ReadAllText("../../../Export.json");
+            var json = Utils.Json2obj(data);
+            if (json is not List<object?> @list) { Log.Write("В начале Export.json не список"); return null; }
+
+            List<Shape> res = new();
+            shape_dict.Clear();
+            shapes.Clear();
+
+            foreach (object? item in @list) {
+                if (item is not Dictionary<string, object?> @dict) { Log.Write("Одна из фигур при импорте - не словарь"); continue; }
+                // Log.Write("D: " + @dict); // Работает!!!
+
+                if (!@dict.ContainsKey("type") || @dict["type"] is not string @type) { Log.Write("Нет поля type, либо оно - не строка"); continue; }
+                if (!@dict.ContainsKey("name") || @dict["name"] is not string @shapeName) { Log.Write("Нет поля name, либо оно - не строка"); continue; }
+                if (!TShapers.ContainsKey(@type)) { Log.Write("Фигуратор " + @type + " не обнаружен :/"); continue; }
+
+                var shaper = TShapers[@type];
+                var newy = shaper.Import(@dict);
+                if (newy == null) { Log.Write("Не получилось собрть фигуру " + Utils.Obj2json(@dict)); continue; }
+
+                // Log.Write("N: " + @type);
+                shape_dict[shapeName] = newy;
+                shapes.Add(new ShapeListBoxItem(shapeName, this));
+                res.Add(newy);
+            }
+            
+            newName = GenName(cur_shaper.Name);
+            return res.ToArray();
         }
 
         private void Update() {

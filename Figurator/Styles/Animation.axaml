@@ -8,15 +8,12 @@
 
 	<Style Selector="Line.anim">
 		<Style.Animations>
-			<Animation Duration="0:0:1" IterationCount="INFINITE">
+			<Animation Duration="0:0:1" IterationCount="INFINITE" Easing="SineEaseInOut" PlaybackDirection="Alternate">
 				<KeyFrame Cue="0%">
 					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 				<KeyFrame Cue="50%">
 					<Setter Property="Opacity" Value="0" />
-				</KeyFrame>
-				<KeyFrame Cue="100%">
-					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 			</Animation>
 		</Style.Animations>
@@ -24,15 +21,12 @@
 
 	<Style Selector="Polyline.anim">
 		<Style.Animations>
-			<Animation Duration="0:0:1" IterationCount="INFINITE">
+			<Animation Duration="0:0:1" IterationCount="INFINITE" Easing="SineEaseInOut" PlaybackDirection="Alternate">
 				<KeyFrame Cue="0%">
 					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 				<KeyFrame Cue="50%">
 					<Setter Property="Opacity" Value="0" />
-				</KeyFrame>
-				<KeyFrame Cue="100%">
-					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 			</Animation>
 		</Style.Animations>
@@ -40,15 +34,12 @@
 	
 	<Style Selector="Rectangle.anim">
 		<Style.Animations>
-			<Animation Duration="0:0:1" IterationCount="INFINITE">
+			<Animation Duration="0:0:1" IterationCount="INFINITE" Easing="SineEaseInOut" PlaybackDirection="Alternate">
 				<KeyFrame Cue="0%">
 					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 				<KeyFrame Cue="50%">
 					<Setter Property="Opacity" Value="0" />
-				</KeyFrame>
-				<KeyFrame Cue="100%">
-					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 			</Animation>
 		</Style.Animations>
@@ -56,15 +47,12 @@
 
 	<Style Selector="Ellipse.anim">
 		<Style.Animations>
-			<Animation Duration="0:0:1" IterationCount="INFINITE">
+			<Animation Duration="0:0:1" IterationCount="INFINITE" Easing="SineEaseInOut" PlaybackDirection="Alternate">
 				<KeyFrame Cue="0%">
 					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 				<KeyFrame Cue="50%">
 					<Setter Property="Opacity" Value="0" />
-				</KeyFrame>
-				<KeyFrame Cue="100%">
-					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 			</Animation>
 		</Style.Animations>
@@ -72,15 +60,12 @@
 
 	<Style Selector="Polygon.anim">
 		<Style.Animations>
-			<Animation Duration="0:0:1" IterationCount="INFINITE">
+			<Animation Duration="0:0:1" IterationCount="INFINITE" Easing="SineEaseInOut" PlaybackDirection="Alternate">
 				<KeyFrame Cue="0%">
 					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 				<KeyFrame Cue="50%">
 					<Setter Property="Opacity" Value="0" />
-				</KeyFrame>
-				<KeyFrame Cue="100%">
-					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 			</Animation>
 		</Style.Animations>
@@ -88,15 +73,12 @@
 
 	<Style Selector="Path.anim">
 		<Style.Animations>
-			<Animation Duration="0:0:1" IterationCount="INFINITE">
+			<Animation Duration="0:0:1" IterationCount="INFINITE" Easing="SineEaseInOut" PlaybackDirection="Alternate">
 				<KeyFrame Cue="0%">
 					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 				<KeyFrame Cue="50%">
 					<Setter Property="Opacity" Value="0" />
-				</KeyFrame>
-				<KeyFrame Cue="100%">
-					<Setter Property="Opacity" Value="1" />
 				</KeyFrame>
 			</Animation>
 		</Style.Animations>

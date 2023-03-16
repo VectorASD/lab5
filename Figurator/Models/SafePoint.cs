@@ -8,8 +8,13 @@ namespace Figurator.Models {
         private bool valid = true;
         private readonly Action<object?>? hook;
         private readonly object? inst;
-        public SafePoint(int x, int y, Action<object?>? hook, object? inst) {
+        public SafePoint(int x, int y, Action<object?>? hook = null, object? inst = null) {
             X = x; Y = y; this.hook = hook; this.inst = inst;
+        }
+        public SafePoint(string init, Action<object?>? hook = null, object? inst = null) {
+            this.hook = hook; this.inst = inst;
+            Set(init);
+            if (!valid) throw new FormatException("Невалидный формат инициализации SafePoint: " + init);
         }
         public Point Point { get => new(X, Y); }
 

@@ -9,7 +9,7 @@ namespace Figurator.Models {
         private bool valid = true;
         private readonly Action<object?>? hook;
         private readonly object? inst;
-        public SafePoints(string init, Action<object?>? hook, object? inst) {
+        public SafePoints(string init, Action<object?>? hook = null, object? inst = null) {
             this.hook = hook; this.inst = inst;
             Set(init);
             if (!valid) throw new FormatException("Невалидный формат инициализации SafePoints: " + init);

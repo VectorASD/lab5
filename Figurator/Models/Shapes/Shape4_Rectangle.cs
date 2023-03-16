@@ -1,6 +1,8 @@
-﻿using Avalonia.Controls.Shapes;
-using Avalonia.Layout;
+﻿using Avalonia;
+using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using System.Collections.Generic;
+using System.Drawing.Printing;
 using static Figurator.Models.Shapes.PropsN;
 
 namespace Figurator.Models.Shapes {
@@ -16,6 +18,8 @@ namespace Figurator.Models.Shapes {
         public string Name => "Прямоугольник";
 
         public Shape? Build(Mapper map) {
+            if (map.GetProp(PName) is not string @name) return null;
+
             if (map.GetProp(PStartDot) is not SafePoint @start || !@start.Valid) return null;
 
             if (map.GetProp(PWidth) is not SafeNum @width || !@width.Valid) return null;
@@ -31,11 +35,50 @@ namespace Figurator.Models.Shapes {
             var p = @start.Point;
 
             return new Rectangle {
+                Name = "sn_" + @name,
                 Margin = new(p.X, p.Y, 0, 0), // Грубо и дёшево, но сердито ;'-} Вместо Canvas.Left и Canvas.Top ;'-}}}
                 Width = @width.Num,
                 Height = @height.Num,
                 Stroke = new SolidColorBrush(Color.Parse(@color)),
                 Fill = new SolidColorBrush(Color.Parse(@fillColor)),
+                StrokeThickness = @thickness
+            };
+        }
+
+
+
+        public Dictionary<string, object?>? Export(Shape shape) {
+            if (shape is not Rectangle @rect) return null;
+            if (@rect.Name == null || !@rect.Name.StartsWith("sn_")) return null;
+
+            return new() {
+                ["name"] = @rect.Name[3..],
+                ["margin"] = @rect.Margin,
+                ["width"] = (short) @rect.Width,
+                ["height"] = (short) @rect.Height,
+                ["stroke"] = @rect.Stroke,
+                ["fill"] = @rect.Fill,
+                ["thickness"] = (short) @rect.StrokeThickness
+            };
+        }
+        public Shape? Import(Dictionary<string, object?> data) {
+            if (!data.ContainsKey("name") || data["name"] is not string @name) return null;
+
+            if (!data.ContainsKey("margin") || data["margin"] is not Thickness @margin) return null;
+            if (!data.ContainsKey("width") || data["width"] is not short @width) return null;
+            if (!data.ContainsKey("height") || data["height"] is not short @height) return null;
+
+            if (!data.ContainsKey("stroke") || data["stroke"] is not SolidColorBrush @color) return null;
+            if (!data.ContainsKey("fill") || data["fill"] is not SolidColorBrush @fillColor) return null;
+            if (!data.ContainsKey("thickness") || data["thickness"] is not short @thickness) return null;
+
+            return new Rectangle {
+                Name = "sn_" + @name,
+                Margin = @margin,
+                Width = @width,
+                Height = @height,
+                Stroke = @color,
+                Fill = @fillColor,
                 StrokeThickness = @thickness
             };
         }

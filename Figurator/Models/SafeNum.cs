@@ -1,7 +1,5 @@
-﻿using Avalonia;
-using Avalonia.Media;
+﻿using Avalonia.Media;
 using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Figurator.Models {
     public class SafeNum: ForcePropertyChange, ISafe {
@@ -9,8 +7,13 @@ namespace Figurator.Models {
         private bool valid = true;
         private readonly Action<object?>? hook;
         private readonly object? inst;
-        public SafeNum(int num, Action<object?>? hook, object? inst) {
+        public SafeNum(int num, Action<object?>? hook = null, object? inst = null) {
             this.num = num; this.hook = hook; this.inst = inst;
+        }
+        public SafeNum(string init, Action<object?>? hook = null, object? inst = null) {
+            this.hook = hook; this.inst = inst;
+            Set(init);
+            if (!valid) throw new FormatException("Невалидный формат инициализации SafeNum: " + init);
         }
         public int Num => num;
 

@@ -15,13 +15,13 @@
 			<Setter Property="BorderBrush" Value="Black"/>
 			<Setter Property="BorderThickness" Value="2"/>
 		</Style>
-		<Style Selector="Grid Button">
+		<Style Selector="Grid.grid Button">
 			<Setter Property="Width" Value="230"/>
 			<Setter Property="Height" Value="35"/>
 			<Setter Property="HorizontalContentAlignment" Value="Center"/>
 			<Setter Property="FontSize" Value="20"/>
 		</Style>
-		<Style Selector="Grid ComboBox">
+		<Style Selector="Grid.grid ComboBox">
 			<Setter Property="Height" Value="30"/>
 			<Setter Property="VerticalContentAlignment" Value="Bottom"/>
 		</Style>
@@ -56,7 +56,7 @@
 		</Menu>
 		<Grid ColumnDefinitions="2*,5*,*">
 			<Border Classes="b">
-				<Grid RowDefinitions="*,30*,1.24*" ColumnDefinitions="*,*">
+				<Grid RowDefinitions="*,30*,1.24*" ColumnDefinitions="*,*" Classes="grid">
 					<ComboBox Name="comboBoxShape" SelectedIndex="{Binding SelectedShape}" Width="460" Grid.ColumnSpan="2">
 						<ComboBoxItem>Прямая линия</ComboBoxItem>
 						<ComboBoxItem>Ломанная линия</ComboBoxItem>
@@ -71,12 +71,25 @@
 				</Grid>
 			</Border>
 			<Border Grid.Column="1" Classes="b">
-				<Canvas Name="canvas" Background="AliceBlue">
-					<TextBlock Text="{Binding Log}"/>
+				<Canvas Background="AliceBlue">
+					<Canvas Name="canvas"/>
+					<!-- Холст в холсте, а TextBox отделён, чтобы очистка canvas не повредило это: -->
+					<TextBlock Text="{Binding Logg}" IsVisible="{Binding ServiceVisible}"/>
 				</Canvas>
 			</Border>
 			<Border Grid.Column="2" Classes="b">
-				<ListBox Name="listBoxShapes"></ListBox>
+				<ListBox Name="listBoxShapes" Items="{Binding Shapes}">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<Grid ColumnDefinitions="5*,*">
+								<TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+								<Button Grid.Column="1" HorizontalAlignment="Right" Padding="0" Command="{Binding Remove}">
+									<Image Width="32" Height="32" Source="/Assets/TrashCan.png"/>
+								</Button>
+							</Grid>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
 			</Border>
 		</Grid>
 	</DockPanel>
