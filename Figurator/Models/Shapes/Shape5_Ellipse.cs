@@ -50,15 +50,18 @@ namespace Figurator.Models.Shapes {
             if (@ellipse.Name == null || !@ellipse.Name.StartsWith("sn_")) return false;
             if (@ellipse.Stroke == null || @ellipse.Fill == null) return false;
 
-            if (map.GetProp(PStartDot) is not SafePoint @start) return false;
-            if (map.GetProp(PWidth) is not SafeNum @width) return false;
-            if (map.GetProp(PHeight) is not SafeNum @height) return false;
+            if (map.GetProp(PCenterDot) is not SafePoint @start) return false;
+            if (map.GetProp(PVertDiagonal) is not SafeNum @width) return false;
+            if (map.GetProp(PHorizDiagonal) is not SafeNum @height) return false;
 
             map.SetProp(PName, @ellipse.Name[3..]);
 
-            @start.Set(new Point(@ellipse.Margin.Left, @ellipse.Margin.Top));
-            @width.Set((short) @ellipse.Width);
-            @height.Set((short) @ellipse.Height);
+            short w = (short) @ellipse.Width;
+            short h = (short) @ellipse.Height;
+
+            @start.Set(new Point(@ellipse.Margin.Left + w/2, @ellipse.Margin.Top + h/2));
+            @width.Set(w);
+            @height.Set(h);
 
             map.SetProp(PColor, ((SolidColorBrush) @ellipse.Stroke).Color.ToString());
             map.SetProp(PFillColor, ((SolidColorBrush) @ellipse.Fill).Color.ToString());

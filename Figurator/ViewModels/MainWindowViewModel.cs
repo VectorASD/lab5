@@ -146,6 +146,11 @@ namespace Figurator.ViewModels {
         public ReactiveCommand<string, Unit> Export { get; }
         public ReactiveCommand<string, Unit> Import { get; }
 
+        public void ShapeTap(string name) {
+            var item = map.ShapeTap(name);
+            this.RaiseAndSetIfChanged(ref cur_shape, item, nameof(SelectedShape));
+        }
+
         /*
          * Просто параметры фигур:
          */

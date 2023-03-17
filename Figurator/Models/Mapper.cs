@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
+using Avalonia.Interactivity;
 using Figurator.Models.Shapes;
 using Figurator.ViewModels;
 using ReactiveUI;
@@ -144,7 +145,10 @@ namespace Figurator.Models {
         public Shape? Create(bool preview) {
             Shape? newy = cur_shaper.Build(this);
             if (newy == null) return null;
-            if (preview) return newy;
+            if (preview) {
+                newy.Name = "marker";
+                return newy;
+            }
 
             if (name2shape.TryGetValue(shapeName, out var value)) Remove(value);
 
@@ -266,7 +270,7 @@ namespace Figurator.Models {
             foreach (var shaper in Shapers) {
                 yeah = shaper.Load(this, shape);
                 if (yeah) {
-                    Log.Write("Удачно");
+                    // Log.Write("Удачно");
                     update_name_lock = true;
                     select_shaper = n;
                     Update();
@@ -276,6 +280,18 @@ namespace Figurator.Models {
                 n++;
             }
             if (!yeah) Log.Write("Не удалось распаковать фигуру :/");
+        }
+
+        public ShapeListBoxItem? ShapeTap(string name) {
+            if (name.StartsWith("sn_")) name = name[3..];
+            else if (name.StartsWith("sn|")) name = Utils.Base64Decode(name.Split('|')[1]);
+            else return null;
+
+            if (name2shape.TryGetValue(name, out var item)) {
+                Select(item);
+                return item;
+            }
+            return null;
         }
 
         private void Update() {

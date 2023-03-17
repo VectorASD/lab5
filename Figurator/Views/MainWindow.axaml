@@ -43,6 +43,7 @@
 
 		<Style Selector="ListBoxItem">
 			<Setter Property="Padding" Value="5 1"/>
+			<Setter Property="Cursor" Value="Hand"/>
 		</Style>
 	</Window.Styles>
 
@@ -76,8 +77,8 @@
 			</Border>
 			<Border Grid.Column="1" Classes="b">
 				<Panel Background="AliceBlue">
-					<Canvas Name="canvas"/>
 					<TextBlock Text="{Binding Logg}" IsVisible="{Binding ServiceVisible}"/>
+					<Canvas Name="canvas" Cursor="Hand" Tapped="CanvasTap"/>
 				</Panel>
 			</Border>
 			<Border Grid.Column="2" Classes="b">
