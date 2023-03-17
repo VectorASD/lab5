@@ -39,7 +39,7 @@ namespace Figurator.Models {
                 sb.Append(i switch {
                     '"' => "\\\"",
                     '\\' => "\\\\",
-                    '$' => "\\$", // Чисто по моей части ;'-}
+                    '$' => "{$", // Чисто по моей части ;'-}
                      _ => i
                 });
             }
@@ -87,7 +87,7 @@ namespace Figurator.Models {
         }
 
         private static object JsonHandler(string str) {
-            if (str.Length < 3 || str[0] != '$' || str[2] != '$') return str;
+            if (str.Length < 3 || str[0] != '$' || str[2] != '$') return str.Replace("{$", "$");
             string data = str[3..];
             string[] thick = str[1] == 'T' ? data.Split(',') : System.Array.Empty<string>();
             return str[1] switch {
@@ -179,7 +179,7 @@ namespace Figurator.Models {
             foreach (var entry in dict)
                 if (IsComposite(entry.Value))
                     items.Append("<" + entry.Key + ">" + ToXMLHandler(entry.Value, level + "\t") + "</" + entry.Key + ">");
-                else attrs.Append(" " + entry.Key + "=\"" + entry.Value + "\"");
+                else attrs.Append(" " + entry.Key + "=\"" + ToXMLHandler(entry.Value, "{err}") + "\"");
 
             if (items.Length == 0) return level + "<Dict" + attrs.ToString() + "/>";
             return level + "<Dict" + attrs.ToString() + ">" + items.ToString() + level + "</Dict>";
@@ -189,7 +189,7 @@ namespace Figurator.Models {
             StringBuilder items = new();
             foreach (var entry in list)
                 if (IsComposite(entry)) items.Append(ToXMLHandler(entry, level + "\t"));
-                else attrs.Append(" " + entry);
+                else attrs.Append(" " + ToXMLHandler(entry, "{err}") + "=''");
 
             if (items.Length == 0) return level + "<List" + attrs.ToString() + "/>";
             return level + "<List" + attrs.ToString() + ">" + items.ToString() + level + "</List>";
@@ -208,10 +208,10 @@ namespace Figurator.Models {
                 case JsonValueKind.Array: // Неиспытано ещё
                     return List2XML(@item.EnumerateObject().Select(item => (object?) item.Value).ToList(), level);
                 case JsonValueKind.String:
-                    var s = XMLEscape(@item.GetString() ?? "");
+                    var s = XMLEscape(@item.GetString() ?? "null");
                     // Log.Write("XS: '" + @item.GetString() + "' -> '" + s + "'");
                     return s;
-                case JsonValueKind.Number: return @item.ToString();
+                case JsonValueKind.Number: return "$" + @item.ToString(); // escape NUM
                 case JsonValueKind.True: return "yeah";
                 case JsonValueKind.False: return "nop";
                 case JsonValueKind.Null: return "null";
@@ -234,7 +234,7 @@ namespace Figurator.Models {
         }
 
         private static string ToJSONHandler(string str) {
-            if (str.Length > 0 && str[0] >= '0' && str[0] <= '9') return str;
+            if (str.Length > 1 && str[0] == '$' && str[1] <= '9' && str[1] >= '0') return str[1..]; // unescape NUM
             return str switch {
                 "null" => "null",
                 "undefined" => "undefined",
