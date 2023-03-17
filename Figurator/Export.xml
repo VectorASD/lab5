@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <List>
-	<Dict name="Линия 1" start="$p$50,50" end="$p$100,100" stroke="$C$Blue" thickness="$2" type="Линия"/>
+	<Dict name="Линия 1" start="$p$50,150" end="$p$100,100" stroke="$C$Blue" thickness="$2" type="Линия"/>
 	<Dict name="Линия 2" start="$p$100,50" end="$p$100,100" stroke="$C$Blue" thickness="$2" type="Линия"/>
 	<Dict name="Линия 3" start="$p$50,100" end="$p$100,100" stroke="$C$Blue" thickness="$2" type="Линия"/>
 	<Dict name="Ломанная 1" points="$P$150,150|200,100|150,100|200,50" stroke="$C$Blue" thickness="$2" type="Ломанная"/>

@@ -1,4 +1,5 @@
-﻿using Avalonia.Media;
+﻿using Avalonia;
+using Avalonia.Media;
 using System;
 
 namespace Figurator.Models {
@@ -26,6 +27,10 @@ namespace Figurator.Models {
                 valid = true;
                 //hook?.Invoke(inst);
             }
+        }
+        public void Set(int n) {
+            num = n;
+            valid = true;
         }
 
         /*

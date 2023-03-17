@@ -1,5 +1,4 @@
-﻿using Avalonia;
-using Avalonia.Controls.Shapes;
+﻿using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using System.Collections.Generic;
 using static Figurator.Models.Shapes.PropsN;
@@ -34,6 +33,25 @@ namespace Figurator.Models.Shapes {
                 Fill = new SolidColorBrush(Color.Parse(@fillColor)),
                 StrokeThickness = @thickness
             };
+        }
+        public bool Load(Mapper map, Shape shape) {
+            if (shape is not Path @path) return false;
+            if (@path.Name == null || !@path.Name.StartsWith("sn|")) return false;
+            if (@path.Stroke == null || @path.Fill == null) return false;
+
+            if (map.GetProp(PCommands) is not SafeGeometry @commands) return false;
+
+            var name = @path.Name.Split('|');
+
+            map.SetProp(PName, Utils.Base64Decode(name[1]));
+
+            @commands.Set(Utils.Base64Decode(name[2]));
+
+            map.SetProp(PColor, ((SolidColorBrush) @path.Stroke).Color.ToString());
+            map.SetProp(PFillColor, ((SolidColorBrush) @path.Fill).Color.ToString());
+            map.SetProp(PThickness, (int) @path.StrokeThickness);
+
+            return true;
         }
 
 

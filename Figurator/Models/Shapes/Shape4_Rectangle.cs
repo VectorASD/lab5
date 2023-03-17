@@ -2,7 +2,6 @@
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using System.Collections.Generic;
-using System.Drawing.Printing;
 using static Figurator.Models.Shapes.PropsN;
 
 namespace Figurator.Models.Shapes {
@@ -43,6 +42,27 @@ namespace Figurator.Models.Shapes {
                 Fill = new SolidColorBrush(Color.Parse(@fillColor)),
                 StrokeThickness = @thickness
             };
+        }
+        public bool Load(Mapper map, Shape shape) {
+            if (shape is not Rectangle @rect) return false;
+            if (@rect.Name == null || !@rect.Name.StartsWith("sn_")) return false;
+            if (@rect.Stroke == null || @rect.Fill == null) return false;
+
+            if (map.GetProp(PStartDot) is not SafePoint @start) return false;
+            if (map.GetProp(PWidth) is not SafeNum @width) return false;
+            if (map.GetProp(PHeight) is not SafeNum @height) return false;
+
+            map.SetProp(PName, @rect.Name[3..]);
+
+            @start.Set(new Point(@rect.Margin.Left, @rect.Margin.Top));
+            @width.Set((short) @rect.Width);
+            @height.Set((short) @rect.Height);
+
+            map.SetProp(PColor, ((SolidColorBrush) @rect.Stroke).Color.ToString());
+            map.SetProp(PFillColor, ((SolidColorBrush) @rect.Fill).Color.ToString());
+            map.SetProp(PThickness, (int) @rect.StrokeThickness);
+
+            return true;
         }
 
 

@@ -26,6 +26,10 @@ namespace Figurator.Models {
                 //hook?.Invoke(inst);
             }
         }
+        public void Set(Points ps) {
+            points = ps;
+            valid = true;
+        }
 
         /*
          * ISafe-часть:

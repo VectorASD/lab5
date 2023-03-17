@@ -2,6 +2,7 @@
 using Avalonia.Controls.Shapes;
 using Figurator.Models.Shapes;
 using Figurator.ViewModels;
+using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -34,6 +35,7 @@ namespace Figurator.Models {
         private readonly object? INST;
 
         public readonly ObservableCollection<ShapeListBoxItem> shapes = new();
+        private readonly Dictionary<string, ShapeListBoxItem> name2shape = new();
 
         public Mapper(Action<object?>? upd, object? inst) {
             shapeWidth = new(200, Update, this);
@@ -76,10 +78,13 @@ namespace Figurator.Models {
 
         private IShape cur_shaper = Shapers[0];
         private readonly Dictionary<string, Shape> shape_dict = new();
-        public string? newName = null;
+        public string? newName = null; // Обрабатывается в конечном Update'е
+        public short select_shaper = -1; // Обрабатывается в конечном Update'е
+        private bool update_name_lock = false;
+
         public void ChangeFigure(int n) {
             cur_shaper = Shapers[n];
-            shapeName = GenName(cur_shaper.Name);
+            if (!update_name_lock) newName = GenName(cur_shaper.Name);
             Update();
         }
 
@@ -99,6 +104,24 @@ namespace Figurator.Models {
                 PDots => shapeDots,
                 PCommands => shapeCommands,
                 _ => 0
+            };
+        }
+        internal void SetProp(PropsN num, object obj) {
+            switch (num) {
+            case PName: shapeName = (string) obj; break;
+            case PColor: shapeColor = (string) obj; break;
+            case PFillColor: shapeFillColor = (string) obj; break;
+            case PThickness: shapeThickness = (int) obj; break;
+            /* Можно заменить SetProp(..., obj) на GetProp(...).Set(obj)
+            case PWidth: shapeWidth = (SafeNum) obj; break;
+            case PHeight: shapeHeight = (SafeNum) obj; break;
+            case PHorizDiagonal: shapeHorizDiagonal = (SafeNum) obj; break;
+            case PVertDiagonal: shapeVertDiagonal = (SafeNum) obj; break;
+            case PStartDot: shapeStartDot = (SafePoint) obj; break;
+            case PEndDot: shapeEndDot = (SafePoint) obj; break;
+            case PCenterDot: shapeCenterDot = (SafePoint) obj; break;
+            case PDots: shapeDots = (SafePoints) obj; break;
+            case PCommands: shapeCommands = (SafeGeometry) obj; break;*/
             };
         }
 
@@ -123,8 +146,12 @@ namespace Figurator.Models {
             if (newy == null) return null;
             if (preview) return newy;
 
+            if (name2shape.TryGetValue(shapeName, out var value)) Remove(value);
+
             shape_dict[shapeName] = newy;
-            shapes.Add(new ShapeListBoxItem(shapeName, this));
+            var item = new ShapeListBoxItem(shapeName, this);
+            shapes.Add(item);
+            name2shape[shapeName] = item;
 
             newName = GenName(cur_shaper.Name);
             return newy;
@@ -139,6 +166,7 @@ namespace Figurator.Models {
 
             @c.Children.Remove(shape);
             shapes.Remove(item);
+            name2shape.Remove(Name);
             shape_dict.Remove(Name);
 
             newName = GenName(cur_shaper.Name);
@@ -152,6 +180,7 @@ namespace Figurator.Models {
                 @c.Children.Clear();
             }
             shapes.Clear();
+            name2shape.Clear();
             shape_dict.Clear();
 
             newName = GenName(cur_shaper.Name);
@@ -216,12 +245,37 @@ namespace Figurator.Models {
 
                 // Log.Write("N: " + @type);
                 shape_dict[shapeName] = newy;
-                shapes.Add(new ShapeListBoxItem(shapeName, this));
+                var itemm = new ShapeListBoxItem(shapeName, this);
+                shapes.Add(itemm);
+                name2shape[shapeName] = itemm;
+
                 res.Add(newy);
             }
             
             newName = GenName(cur_shaper.Name);
             return res.ToArray();
+        }
+
+        public void Select(ShapeListBoxItem? shapeItem) {
+            // Log.Write("sel: " + shapeItem + " | " + (shapeItem == null));
+            if (shapeItem == null) return;
+
+            var shape = shape_dict[shapeItem.Name];
+            bool yeah = false;
+            short n = 0;
+            foreach (var shaper in Shapers) {
+                yeah = shaper.Load(this, shape);
+                if (yeah) {
+                    Log.Write("Удачно");
+                    update_name_lock = true;
+                    select_shaper = n;
+                    Update();
+                    update_name_lock = false;
+                    break;
+                }
+                n++;
+            }
+            if (!yeah) Log.Write("Не удалось распаковать фигуру :/");
         }
 
         private void Update() {

@@ -16,6 +16,8 @@ namespace Figurator.Models.Shapes {
 
         public string Name => "Линия";
 
+
+
         public Shape? Build(Mapper map) {
             if (map.GetProp(PName) is not string @name) return null;
 
@@ -34,6 +36,24 @@ namespace Figurator.Models.Shapes {
                 Stroke = new SolidColorBrush(Color.Parse(@color)),
                 StrokeThickness = @thickness
             };
+        }
+        public bool Load(Mapper map, Shape shape) {
+            if (shape is not Line @line) return false;
+            if (@line.Name == null || !@line.Name.StartsWith("sn_")) return false;
+            if (@line.Stroke == null) return false;
+
+            if (map.GetProp(PStartDot) is not SafePoint @start) return false;
+            if (map.GetProp(PEndDot) is not SafePoint @end) return false;
+
+            map.SetProp(PName, @line.Name[3..]);
+
+            @start.Set(@line.StartPoint);
+            @end.Set(@line.EndPoint);
+
+            map.SetProp(PColor, ((SolidColorBrush) @line.Stroke).Color.ToString());
+            map.SetProp(PThickness, (int) line.StrokeThickness);
+
+            return true;
         }
 
 

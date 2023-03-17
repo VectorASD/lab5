@@ -35,6 +35,23 @@ namespace Figurator.Models.Shapes {
                 StrokeThickness = @thickness
             };
         }
+        public bool Load(Mapper map, Shape shape) {
+            if (shape is not Polygon @polygon) return false;
+            if (@polygon.Name == null || !@polygon.Name.StartsWith("sn_")) return false;
+            if (@polygon.Stroke == null || @polygon.Fill == null) return false;
+
+            if (map.GetProp(PDots) is not SafePoints @dots) return false;
+
+            map.SetProp(PName, @polygon.Name[3..]);
+
+            @dots.Set((Points) @polygon.Points);
+
+            map.SetProp(PColor, ((SolidColorBrush) @polygon.Stroke).Color.ToString());
+            map.SetProp(PFillColor, ((SolidColorBrush) @polygon.Fill).Color.ToString());
+            map.SetProp(PThickness, (int) @polygon.StrokeThickness);
+
+            return true;
+        }
 
 
 

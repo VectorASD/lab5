@@ -1,7 +1,6 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using Figurator.Models;
 using Figurator.Views;
 using ReactiveUI;
@@ -11,15 +10,15 @@ using System.Reactive;
 
 namespace Figurator.ViewModels {
     public class Log {
-        public static MainWindowViewModel? mwvm;
+        public static MainWindowViewModel? Mwvm { private get; set; }
         public static void Write(string message) {
-            if (mwvm != null) mwvm.Logg += message;
+            if (Mwvm != null) Mwvm.Logg += message;
         }
     }
 
     public class MainWindowViewModel: ViewModelBase {
         private UserControl content;
-        private int shape_n = 0;
+        private int shaper_n = 0;
         private readonly Mapper map;
         private readonly Canvas canv;
 
@@ -45,10 +44,10 @@ namespace Figurator.ViewModels {
             bool valid2 = map.ValidName();
             // Log += "Update: " + valid;
 
-            is_enabled = valid & valid2;
+            is_enabled = valid;
 
-            AddColor = is_enabled ? Brushes.Lime : Brushes.Pink;
-            ShapeNameColor = valid2 ? Brushes.Lime : Brushes.Pink;
+            AddColor = valid ? valid2 ? Brushes.Lime : Brushes.Yellow : Brushes.Pink;
+            ShapeNameColor = valid2 ? Brushes.Lime : Brushes.Yellow;
 
             if (map.newName != null) {
                 var name = map.newName;
@@ -61,7 +60,7 @@ namespace Figurator.ViewModels {
                 animated_part = null;
             }
 
-            if (is_enabled) {
+            if (valid) {
                 Shape? newy = map.Create(true);
                 if (newy != null) {
                     newy.Classes.Add("anim");
@@ -69,13 +68,20 @@ namespace Figurator.ViewModels {
                     animated_part = newy;
                 }
             }
+
+            var select = map.select_shaper;
+            if (select != -1) {
+                map.select_shaper = -1;
+                if (select == shaper_n) SelectedShaper = select == 0 ? 1 : 0; // Перебросочка
+                SelectedShaper = select;
+            }
         }
         private static void Update(object? inst) {
             if (inst != null && inst is MainWindowViewModel @mwvm) @mwvm.Update();
         }
 
         public MainWindowViewModel(MainWindow mw) {
-            Log.mwvm = this;
+            Log.Mwvm = this;
             content = contentArray[0];
             map = new(Update, this);
             canv = mw.Find<Canvas>("canvas");
@@ -87,9 +93,9 @@ namespace Figurator.ViewModels {
             Import = ReactiveCommand.Create<string, Unit>(n => { FuncImport(n); return new Unit(); });
         }
 
-        public int SelectedShape {
-            get => shape_n;
-            set { shape_n = value; map.ChangeFigure(value); Content = contentArray[value]; }
+        public int SelectedShaper {
+            get => shaper_n;
+            set { this.RaiseAndSetIfChanged(ref shaper_n, value); map.ChangeFigure(value); Content = contentArray[value]; }
         }
 
         public UserControl Content {
@@ -103,7 +109,7 @@ namespace Figurator.ViewModels {
 
         private void FuncAdd() {
             if (!is_enabled) return;
-            // Log += "Add";
+            // Log.Write("Add");
 
             Shape? newy = map.Create(false);
             if (newy == null) return;
@@ -185,5 +191,10 @@ namespace Figurator.ViewModels {
 
         private bool service_visible = true;
         public bool ServiceVisible { get => service_visible; set => this.RaiseAndSetIfChanged(ref service_visible, value); }
+
+        private ShapeListBoxItem? cur_shape;
+        public ShapeListBoxItem? SelectedShape { get => cur_shape;
+            set { this.RaiseAndSetIfChanged(ref cur_shape, value); map.Select(value); }
+        }
     }
 }

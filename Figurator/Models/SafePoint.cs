@@ -28,6 +28,11 @@ namespace Figurator.Models {
                 //hook?.Invoke(inst);
             }
         }
+        public void Set(Point p) {
+            X = (int) p.X;
+            Y = (int) p.Y;
+            valid = true;
+        }
 
         /*
          * ISafe-часть:

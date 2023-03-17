@@ -32,6 +32,22 @@ namespace Figurator.Models.Shapes {
                 StrokeThickness = @thickness
             };
         }
+        public bool Load(Mapper map, Shape shape) {
+            if (shape is not Polyline @polyline) return false;
+            if (@polyline.Name == null || !@polyline.Name.StartsWith("sn_")) return false;
+            if (@polyline.Stroke == null) return false;
+
+            if (map.GetProp(PDots) is not SafePoints @dots) return false;
+
+            map.SetProp(PName, @polyline.Name[3..]);
+
+            @dots.Set((Points) @polyline.Points);
+
+            map.SetProp(PColor, ((SolidColorBrush) @polyline.Stroke).Color.ToString());
+            map.SetProp(PThickness, (int) @polyline.StrokeThickness);
+
+            return true;
+        }
 
 
 

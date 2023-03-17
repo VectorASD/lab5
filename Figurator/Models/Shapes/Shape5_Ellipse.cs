@@ -45,6 +45,27 @@ namespace Figurator.Models.Shapes {
                 StrokeThickness = @thickness
             };
         }
+        public bool Load(Mapper map, Shape shape) {
+            if (shape is not Ellipse @ellipse) return false;
+            if (@ellipse.Name == null || !@ellipse.Name.StartsWith("sn_")) return false;
+            if (@ellipse.Stroke == null || @ellipse.Fill == null) return false;
+
+            if (map.GetProp(PStartDot) is not SafePoint @start) return false;
+            if (map.GetProp(PWidth) is not SafeNum @width) return false;
+            if (map.GetProp(PHeight) is not SafeNum @height) return false;
+
+            map.SetProp(PName, @ellipse.Name[3..]);
+
+            @start.Set(new Point(@ellipse.Margin.Left, @ellipse.Margin.Top));
+            @width.Set((short) @ellipse.Width);
+            @height.Set((short) @ellipse.Height);
+
+            map.SetProp(PColor, ((SolidColorBrush) @ellipse.Stroke).Color.ToString());
+            map.SetProp(PFillColor, ((SolidColorBrush) @ellipse.Fill).Color.ToString());
+            map.SetProp(PThickness, (int) @ellipse.StrokeThickness);
+
+            return true;
+        }
 
 
 
