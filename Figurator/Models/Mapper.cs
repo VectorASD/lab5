@@ -32,6 +32,8 @@ namespace Figurator.Models {
 
         public SafeGeometry shapeCommands;
 
+        public Transformator tformer;
+
         private readonly Action<object?>? UPD;
         private readonly object? INST;
 
@@ -51,6 +53,8 @@ namespace Figurator.Models {
             shapeDots = new("50,50 100,100 50,100 100,50", Update, this);
 
             shapeCommands = new("M 10 70 l 30,30 10,10 35,0 0,-35 m 50 0 l 0,-50 10,0 35,35 m 50 0 l 0,-50 10,0 35,35z m 70 0 l 0,30 30,0 5,-35z", Update, this);
+
+            tformer = new(upd, inst);
             /* 
              * Вывод: какой-то Geometry недоделанный...:
              * 1.) Geometry.Stringify нет :///////////////,
@@ -142,9 +146,20 @@ namespace Figurator.Models {
                 n += 1;
             }
         }
+        private void AddShape(Shape newy, string? name = null) {
+            name ??= shapeName; // Согл... XD    if (name == null) name = shapeName;    было изначально
+
+            shape_dict[name] = newy;
+            var item = new ShapeListBoxItem(name, this);
+            shapes.Add(item);
+            name2shape[name] = item;
+        }
+
         public Shape? Create(bool preview) {
             Shape? newy = cur_shaper.Build(this);
             if (newy == null) return null;
+            tformer.Transform(newy, preview);
+
             if (preview) {
                 newy.Name = "marker";
                 return newy;
@@ -152,10 +167,7 @@ namespace Figurator.Models {
 
             if (name2shape.TryGetValue(shapeName, out var value)) Remove(value);
 
-            shape_dict[shapeName] = newy;
-            var item = new ShapeListBoxItem(shapeName, this);
-            shapes.Add(item);
-            name2shape[shapeName] = item;
+            AddShape(newy);
 
             newName = GenName(cur_shaper.Name);
             return newy;
@@ -202,6 +214,10 @@ namespace Figurator.Models {
                     // Log.Write("  res: " + res);
                     if (res != null) {
                         res["type"] = shaper.Name;
+
+                        var tform = Transformator.Export(shape);
+                        if (tform.Count > 0) res["transform"] = tform;
+
                         data.Add(res);
                         R = false;
                         break;
@@ -247,11 +263,11 @@ namespace Figurator.Models {
                 var newy = shaper.Import(@dict);
                 if (newy == null) { Log.Write("Не получилось собрть фигуру " + Utils.Obj2json(@dict)); continue; }
 
+                if (@dict.TryGetValue("transform", out object? tform))
+                    if (tform is not Dictionary<string, object?> @dict2) Log.Write("У одной из фигур при импорте transform - не словарь");
+                    else Transformator.Import(newy, @dict2);
                 // Log.Write("N: " + @type);
-                shape_dict[shapeName] = newy;
-                var itemm = new ShapeListBoxItem(shapeName, this);
-                shapes.Add(itemm);
-                name2shape[shapeName] = itemm;
+                AddShape(newy, shapeName);
 
                 res.Add(newy);
             }
@@ -271,6 +287,7 @@ namespace Figurator.Models {
                 yeah = shaper.Load(this, shape);
                 if (yeah) {
                     // Log.Write("Удачно");
+                    tformer.Disassemble(shape);
                     update_name_lock = true;
                     select_shaper = n;
                     Update();

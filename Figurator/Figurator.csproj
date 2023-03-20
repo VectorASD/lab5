@@ -34,6 +34,9 @@
     <Compile Update="Views\Shape5_UserControl.axaml.cs">
       <DependentUpon>Shape5_UserControl.axaml</DependentUpon>
     </Compile>
+    <Compile Update="Views\ShapeT_UserControl.axaml.cs">
+      <DependentUpon>ShapeT_UserControl.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\Shape6_UserControl.axaml.cs">
       <DependentUpon>Shape6_UserControl.axaml</DependentUpon>
     </Compile>

@@ -1,7 +1,5 @@
-﻿using System.Runtime.Serialization.Json;
-using System.Text;
+﻿using System.Text;
 using System.Xml.Linq;
-using System.Xml;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
@@ -10,10 +8,9 @@ using Avalonia;
 using Avalonia.Media;
 using System.Text.Json;
 using Figurator.ViewModels;
-using HarfBuzzSharp;
 
 namespace Figurator.Models {
-    public class Utils {
+    public static class Utils {
         // By VectorASD         Всё это моих рук дела! ;'-}
 
         /*
@@ -178,7 +175,7 @@ namespace Figurator.Models {
             StringBuilder items = new();
             foreach (var entry in dict)
                 if (IsComposite(entry.Value))
-                    items.Append("<" + entry.Key + ">" + ToXMLHandler(entry.Value, level + "\t") + "</" + entry.Key + ">");
+                    items.Append(level + "\t<" + entry.Key + ">" + ToXMLHandler(entry.Value, level + "\t\t") + level + "\t</" + entry.Key + ">");
                 else attrs.Append(" " + entry.Key + "=\"" + ToXMLHandler(entry.Value, "{err}") + "\"");
 
             if (items.Length == 0) return level + "<Dict" + attrs.ToString() + "/>";
@@ -258,7 +255,7 @@ namespace Figurator.Models {
                     if (sb.Length > 1) sb.Append(", ");
                     sb.Append(ToJSONHandler(el.Name.LocalName));
                     sb.Append(": ");
-                    sb.Append(ToJSONHandler(el));
+                    sb.Append(ToJSONHandler(el.Elements().ToArray()[0]));
                 }
                 sb.Append('}');
             } else if (name == "List") {
@@ -272,7 +269,7 @@ namespace Figurator.Models {
                     sb.Append(ToJSONHandler(el));
                 }
                 sb.Append(']');
-            }
+            } else sb.Append("Type??" + name);
             return sb.ToString();
         }
         public static string Xml2json(string xml) => ToJSONHandler(XElement.Parse(xml));
@@ -296,6 +293,15 @@ namespace Figurator.Models {
             target.Arrange(new Rect(size));
             bitmap.Render(target);
             bitmap.Save(path);
+        }
+
+        public static string TrimAll(this string str) { // Помимо пробелов по бокам, убирает повторы пробелов внутри
+            StringBuilder sb = new();
+            for (int i = 0; i < str.Length; i++) {
+                if (i > 0 && str[i] == ' ' && str[i - 1] == ' ') continue;
+                sb.Append(str[i]);
+            }
+            return sb.ToString().Trim();
         }
     }
 }
