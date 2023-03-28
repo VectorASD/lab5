@@ -5,14 +5,30 @@ using Figurator.Models;
 using Figurator.Views;
 using ReactiveUI;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Reactive;
+using System.Threading;
 
 namespace Figurator.ViewModels {
     public class Log {
+        static readonly List<string> logs = new();
+        static readonly string path = "../../../Log.txt";
+        static bool first = true;
+
         public static MainWindowViewModel? Mwvm { private get; set; }
-        public static void Write(string message) {
-            if (Mwvm != null) Mwvm.Logg += message;
+        public static void Write(string message, bool without_update = false) {
+            if (!without_update) {
+                logs.Add(message);
+                if (logs.Count > 50) logs.RemoveAt(0);
+
+                if (Mwvm != null) Mwvm.Logg = string.Join('\n', logs);
+            }
+
+            if (first) File.WriteAllText(path, message + "\n");
+            else File.AppendAllText(path, message + "\n");
+            first = false;
         }
     }
 
@@ -33,7 +49,7 @@ namespace Figurator.ViewModels {
         private UserControl? sharedContent = new ShapeT_UserControl();
 
         private string log = "";
-        public string Logg { get => log; set => this.RaiseAndSetIfChanged(ref log, value + "\n"); }
+        public string Logg { get => log; set => this.RaiseAndSetIfChanged(ref log, value); }
 
         private bool is_enabled = true;
         private IBrush add_color = Brushes.White;
@@ -141,6 +157,11 @@ namespace Figurator.ViewModels {
             } else map.Export(Type == "XML");
         }
         private void FuncImport(string Type) {
+            if (Type == "PNG") {
+                var stackSize = 10000000; // ДЕЙСТВИТЕЛЬНО ПРОКАНАЛО!!! XD 8000 вообще ни о чём, когда надо рекурсивно найти все группы пикселей, что может, в худшем случае, потребовать стек подобного размера...
+                new Thread(Imager.Import, stackSize).Start();
+                return;
+            }
             Shape[]? beginners = map.Import(Type == "XML");
             if (beginners == null) return;
 
@@ -193,15 +214,8 @@ namespace Figurator.ViewModels {
         /*
          * База цветов
          */
-
-        //private readonly static string[] colors = new Colors().GetType().GetProperties().Select(x => x.Name).ToArray(); // Не проканало :/ CheckBox не выдержал такие объёмы ;'-}
-        private readonly static string[] colors = new[] {
-            "Yellow", "Blue", "Green", "Red",
-            "Orange", "Brown", "Pink", "Aqua",
-            "Lime",
-            "White", "LightGray", "DarkGray", "Black"
-        };
-        public static string[] ColorsArr { get => colors; }
+        
+        public static string[] ColorsArr { get => Imager.colors; }
 
         /*
          * Список фигурок и видимость маркетной фигуры (на практике у неё меняется IsVisible на прямую) + TextBlock логов

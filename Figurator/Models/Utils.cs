@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Media;
 using System.Text.Json;
 using Figurator.ViewModels;
+using System.Collections;
 
 namespace Figurator.Models {
     public static class Utils {
@@ -43,31 +44,22 @@ namespace Figurator.Models {
             return sb.ToString();
         }
         public static string Obj2json(object? obj) { // Велосипед ради поддержки своей сериализации классов по типу Point, SolidColorBrush и т.д.
-            if (obj == null) return "null";
-            if (obj is string @str) return '"' + JsonEscape(str) + '"';
-            if (obj is bool @bool) return @bool ? "true" : "false";
-            if (obj is short @short) return @short.ToString();
-            if (obj is int @int) return @int.ToString();
-            if (obj is long @long) return @long.ToString();
-            if (obj is float @float) return @float.ToString();
-            if (obj is double @double) return @double.ToString();
+            switch (obj) {
+            case null: return "null";
+            case string @str: return '"' + JsonEscape(str) + '"';
+            case bool @bool: return @bool ? "true" : "false";
+            case short @short: return @short.ToString();
+            case int @int: return @int.ToString();
+            case long @long: return @long.ToString();
+            case float @float: return @float.ToString();
+            case double @double: return @double.ToString();
 
-            if (obj is Point @point) return "\"$p$" + (int) @point.X + "," + (int) @point.Y + '"';
-            if (obj is Points @points) return "\"$P$" + string.Join("|", @points.Select(p => (int) p.X + "," + (int) p.Y)) + '"';
-            if (obj is SolidColorBrush @color) return "\"$C$" + @color.Color + '"';
-            if (obj is Thickness @thickness) return "\"$T$" + @thickness.Left + "," + @thickness.Top + "," + @thickness.Right + "," + @thickness.Bottom + '"';
+            case Point @point: return "\"$p$" + (int) @point.X + "," + (int) @point.Y + '"';
+            case Points @points: return "\"$P$" + string.Join("|", @points.Select(p => (int) p.X + "," + (int) p.Y)) + '"';
+            case SolidColorBrush @color: return "\"$C$" + @color.Color + '"';
+            case Thickness @thickness: return "\"$T$" + @thickness.Left + "," + @thickness.Top + "," + @thickness.Right + "," + @thickness.Bottom + '"';
 
-            if (obj is List<object?> @list) {
-                StringBuilder sb = new();
-                sb.Append('[');
-                foreach (object? item in @list) {
-                    if (sb.Length > 1) sb.Append(", ");
-                    sb.Append(Obj2json(item));
-                }
-                sb.Append(']');
-                return sb.ToString();
-            }
-            if (obj is Dictionary<string, object?> @dict) {
+            case Dictionary<string, object?> @dict: {
                 StringBuilder sb = new();
                 sb.Append('{');
                 foreach (var entry in @dict) {
@@ -79,8 +71,18 @@ namespace Figurator.Models {
                 sb.Append('}');
                 return sb.ToString();
             }
-
-            return "(" + obj.GetType() + " ???)";
+            case IEnumerable @list: {
+                StringBuilder sb = new();
+                sb.Append('[');
+                foreach (object? item in @list) {
+                    if (sb.Length > 1) sb.Append(", ");
+                    sb.Append(Obj2json(item));
+                }
+                sb.Append(']');
+                return sb.ToString();
+            }
+            default: return "(" + obj.GetType() + " ???)";
+            }
         }
 
         private static object JsonHandler(string str) {
