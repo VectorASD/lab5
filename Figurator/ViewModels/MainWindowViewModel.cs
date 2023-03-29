@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
+using Avalonia.Input;
 using Avalonia.Media;
 using Figurator.Models;
 using Figurator.Views;
@@ -7,8 +8,10 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Reactive;
+using System.Text;
 using System.Threading;
 
 namespace Figurator.ViewModels {
@@ -20,8 +23,8 @@ namespace Figurator.ViewModels {
         public static MainWindowViewModel? Mwvm { private get; set; }
         public static void Write(string message, bool without_update = false) {
             if (!without_update) {
-                logs.Add(message);
-                if (logs.Count > 50) logs.RemoveAt(0);
+                foreach (var mess in message.Split('\n')) logs.Add(mess);
+                while (logs.Count > 50) logs.RemoveAt(0);
 
                 if (Mwvm != null) Mwvm.Logg = string.Join('\n', logs);
             }
@@ -56,6 +59,22 @@ namespace Figurator.ViewModels {
         public IBrush AddColor { get => add_color; set => this.RaiseAndSetIfChanged(ref add_color, value); }
 
         private Shape? animated_part = null;
+
+        private string GetStackInfo() {
+            var st = new StackTrace();
+            var sb = new StringBuilder();
+            for (int i = 1; i < 11; i++) {
+                var frame = st.GetFrame(i);
+                if (frame == null) continue;
+                
+                var method = frame.GetMethod();
+                if (method == null || method.ReflectedType == null) continue;
+
+                sb.Append(method.ReflectedType.Name + " " + method.Name + " | ");
+                if (i == 5) sb.Append("\n    ");
+            }
+            return sb.ToString();
+        }
         private void Update() {
             bool valid = map.ValidInput();
             bool valid2 = map.ValidName();
@@ -72,23 +91,27 @@ namespace Figurator.ViewModels {
                 ShapeName = name;
             }
 
-            if (animated_part != null) {
-                canv.Children.Remove(animated_part);
-                animated_part = null;
-            }
+            // Log.Write("upd: " + map.update_marker_lock + "\n" + GetStackInfo());
+            if (!map.update_marker_lock) { // Иначе не получится перетаскивать нормально маркер курсором
+                if (animated_part != null) {
+                    canv.Children.Remove(animated_part);
+                    animated_part = null;
+                }
 
-            if (valid) {
-                Shape? newy = map.Create(true);
-                if (newy != null) {
-                    newy.Classes.Add("anim");
-                    canv.Children.Add(newy);
-                    animated_part = newy;
+                if (valid) {
+                    Shape? newy = map.Create(true);
+                    if (newy != null) {
+                        newy.Classes.Add("anim");
+                        canv.Children.Add(newy);
+                        animated_part = newy;
+                    }
                 }
             }
 
-            var select = map.select_shaper;
+            int select = map.select_shaper;
             if (select != -1) {
                 map.select_shaper = -1;
+                if (select == -2) select = shaper_n; // Просто обновляет всё меню
                 if (select == shaper_n) SelectedShaper = select == 0 ? 1 : 0; // Перебросочка
                 SelectedShaper = select;
                 SharedContent = null; // Перебросочка
@@ -110,6 +133,32 @@ namespace Figurator.ViewModels {
             Clear = ReactiveCommand.Create<Unit, Unit>(_ => { FuncClear(); return new Unit(); });
             Export = ReactiveCommand.Create<string, Unit>(n => { FuncExport(n); return new Unit(); });
             Import = ReactiveCommand.Create<string, Unit>(n => { FuncImport(n); return new Unit(); });
+
+            /* canv.PointerEnter += (object? sender, PointerEventArgs e) => {
+                Log.Write("PointerEnter: " + (e.Source == null ? "null" : e.Source.GetType().Name));
+            };
+            canv.PointerLeave += (object? sender, PointerEventArgs e) => {
+                Log.Write("PointerLeave: " + (e.Source == null ? "null" : e.Source.GetType().Name));
+            };*/
+            canv.PointerPressed += (object? sender, PointerPressedEventArgs e) => {
+                // Log.Write("PointerPressed: " + (e.Source == null ? "null" : e.Source.GetType().Name) + " pos: " + e.GetCurrentPoint(canv).Position);
+                if (e.Source != null && e.Source is Shape @shape) map.PressShape(@shape, e.GetCurrentPoint(canv).Position);
+            };
+            canv.PointerMoved += (object? sender, PointerEventArgs e) => {
+                // Log.Write("PointerMoved: " + (e.Source == null ? "null" : e.Source.GetType().Name) + " pos: " + e.GetCurrentPoint(canv).Position);
+                if (e.Source != null && e.Source is Shape @shape) map.MoveShape(@shape, e.GetCurrentPoint(canv).Position);
+            };
+            canv.PointerReleased += (object? sender, PointerReleasedEventArgs e) => {
+                // Log.Write("PointerReleased: " + (e.Source == null ? "null" : e.Source.GetType().Name) + " pos: " + e.GetCurrentPoint(canv).Position);
+                if (e.Source != null && e.Source is Shape @shape) {
+                    var item = map.ReleaseShape(@shape, e.GetCurrentPoint(canv).Position);
+                    this.RaiseAndSetIfChanged(ref cur_shape, item, nameof(SelectedShape));
+                }
+            };
+            canv.PointerWheelChanged += (object? sender, PointerWheelEventArgs e) => {
+                // Log.Write("PointerWheelChanged: " + (e.Source == null ? "null" : e.Source.GetType().Name) + " delta: " + e.Delta);
+                if (e.Source != null && e.Source is Shape @shape) map.WheelMove(@shape, e.Delta.Y);
+            };
         }
 
         public int SelectedShaper {
@@ -173,11 +222,6 @@ namespace Figurator.ViewModels {
         public ReactiveCommand<Unit, Unit> Clear { get; }
         public ReactiveCommand<string, Unit> Export { get; }
         public ReactiveCommand<string, Unit> Import { get; }
-
-        public void ShapeTap(string name) {
-            var item = map.ShapeTap(name);
-            this.RaiseAndSetIfChanged(ref cur_shape, item, nameof(SelectedShape));
-        }
 
         /*
          * Просто параметры фигур:

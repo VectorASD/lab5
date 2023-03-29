@@ -1,4 +1,5 @@
-﻿using Avalonia.Controls;
+﻿using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Figurator.Models.Shapes;
@@ -70,6 +71,12 @@ namespace Figurator.Models {
             UPD = upd;
             INST = inst;
         }
+        private void Update() {
+            UPD?.Invoke(INST);
+        }
+        private static void Update(object? me) {
+            if (me != null && me is Mapper @map) @map.Update();
+        }
 
         private static IShape[] Shapers => new IShape[] {
             new Shape1_Line(),
@@ -86,6 +93,7 @@ namespace Figurator.Models {
         public string? newName = null; // Обрабатывается в конечном Update'е
         public short select_shaper = -1; // Обрабатывается в конечном Update'е
         private bool update_name_lock = false;
+        public bool update_marker_lock = false; // Обрабатывается в конечном Update'е
 
         public void ChangeFigure(int n) {
             cur_shaper = Shapers[n];
@@ -161,7 +169,7 @@ namespace Figurator.Models {
             tformer.Transform(newy, preview);
 
             if (preview) {
-                newy.Name = "marker";
+                newy.Name = "sn_marker";
                 return newy;
             }
 
@@ -285,19 +293,23 @@ namespace Figurator.Models {
             short n = 0;
             foreach (var shaper in Shapers) {
                 yeah = shaper.Load(this, shape);
-                if (yeah) {
-                    // Log.Write("Удачно");
-                    tformer.Disassemble(shape);
-                    update_name_lock = true;
-                    select_shaper = n;
-                    Update();
-                    update_name_lock = false;
-                    break;
-                }
+                if (yeah) break;
                 n++;
             }
-            if (!yeah) Log.Write("Не удалось распаковать фигуру :/");
+            if (yeah) {
+                if (shape.Name != null && shape.Name.StartsWith("sn_")) SetProp(PName, shape.Name[3..]);
+                // Log.Write("Удачно");
+                tformer.Disassemble(shape);
+                update_name_lock = true;
+                select_shaper = n;
+                Update();
+                update_name_lock = false;
+            } else Log.Write("Не удалось распаковать фигуру :/");
         }
+
+        /*
+         * Действия с мышью над фигурами
+         */
 
         public ShapeListBoxItem? ShapeTap(string name) {
             if (name.StartsWith("sn_")) name = name[3..];
@@ -311,11 +323,77 @@ namespace Figurator.Models {
             return null;
         }
 
-        private void Update() {
-            UPD?.Invoke(INST);
+        public void WheelMove(Shape shape, double move) {
+            var scale = Transformator.GetScale(shape);
+            move = move < 0 ? 1.1 : 1 / 1.1;
+            scale.ScaleX *= move;
+            scale.ScaleY *= move;
+
+            if ((shape.Name ?? "") == "sn_marker") {
+                tformer.scaleTransform.Set(scale.ScaleX, scale.ScaleY);
+                select_shaper = -2;
+                Update();
+            }
+            // Движения колеса осилил, значит и всё остальное осилю ;'-}
         }
-        private static void Update(object? me) {
-            if (me != null && me is Mapper @map) @map.Update();
+
+        Shape? moved_shape;
+        Point moved_pos;
+        Point shape_old_pos;
+        bool tapped = false;
+
+        public void PressShape(Shape shape, Point pos) {
+            Point? old_pos = null;
+            foreach (var shaper in Shapers) {
+                old_pos = shaper.GetPos(shape);
+                if (old_pos != null) break;
+            }
+            if (old_pos == null) { Log.Write("Не удалось считать позицию фигуры :/"); return; }
+
+            moved_shape = shape;
+            moved_pos = pos;
+            shape_old_pos = (Point) old_pos;
+            tapped = true;
+        }
+
+        public void MoveShape(Shape shape, Point pos) {
+            if (moved_shape != shape) return;
+            var delta = pos - moved_pos;
+            if (delta.X == 0 && delta.Y == 0) return; // Фиктивные перемещения. Могут возникнуть при отпускании фигуры сразу после нажатия из-за ReleaseShape метода в этом классе.
+
+            if (Math.Pow(delta.X, 2) + Math.Pow(delta.Y, 2) > 9) tapped = false;
+            var new_pos = shape_old_pos + delta;
+
+            bool yeah = false;
+            foreach (var shaper in Shapers) {
+                yeah = shaper.SetPos(shape, (int) new_pos.X, (int) new_pos.Y);
+                if (yeah) break;
+            }
+            if (!yeah) { Log.Write("Не удалось переместить фигуру :/"); return; }
+            // else Log.Write("Перемещено!");
+
+            if (shape.Name == "sn_marker") {
+                update_marker_lock = update_name_lock = true;
+                yeah = false;
+                foreach (var shaper in Shapers) {
+                    yeah = shaper.Load(this, shape);
+                    if (yeah) break;
+                }
+                if (yeah) {
+                    select_shaper = -2;
+                    Update();
+                } else Log.Write("Не удалось распотрошить фигуру :/");
+                update_marker_lock = update_name_lock = false;
+            }
+        }
+
+        public ShapeListBoxItem? ReleaseShape(Shape shape, Point pos) {
+            if (moved_shape != shape) return null;
+            MoveShape(shape, pos);
+            moved_shape = null;
+
+            if (tapped) return ShapeTap(shape.Name ?? "");
+            return null;
         }
     }
 }

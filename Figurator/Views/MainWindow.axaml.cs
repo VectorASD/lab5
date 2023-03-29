@@ -10,7 +10,7 @@ namespace Figurator.Views {
             DataContext = new MainWindowViewModel(this);
         }
 
-        private void CanvasTap(object sender, RoutedEventArgs e) {
+        /* private void CanvasTap(object sender, RoutedEventArgs e) {
             var mwvm = (MainWindowViewModel?) DataContext;
             if (mwvm == null) return;
 
@@ -18,6 +18,6 @@ namespace Figurator.Views {
             if (src == null || src is not Shape @shape || @shape.Name == "marker") return;
 
             mwvm.ShapeTap(@shape.Name ?? "");
-        }
+        }*/
     }
 }

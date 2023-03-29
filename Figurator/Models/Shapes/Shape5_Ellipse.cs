@@ -47,14 +47,11 @@ namespace Figurator.Models.Shapes {
         }
         public bool Load(Mapper map, Shape shape) {
             if (shape is not Ellipse @ellipse) return false;
-            if (@ellipse.Name == null || !@ellipse.Name.StartsWith("sn_")) return false;
             if (@ellipse.Stroke == null || @ellipse.Fill == null) return false;
 
             if (map.GetProp(PCenterDot) is not SafePoint @start) return false;
             if (map.GetProp(PVertDiagonal) is not SafeNum @width) return false;
             if (map.GetProp(PHorizDiagonal) is not SafeNum @height) return false;
-
-            map.SetProp(PName, @ellipse.Name[3..]);
 
             short w = (short) @ellipse.Width;
             short h = (short) @ellipse.Height;
@@ -106,6 +103,24 @@ namespace Figurator.Models.Shapes {
                 Fill = @fillColor,
                 StrokeThickness = @thickness
             };
+        }
+
+
+
+        public Point? GetPos(Shape shape) { // Центр эллипса
+            if (shape is not Ellipse @ellipse) return null;
+            Point pos = new(@ellipse.Margin.Left, @ellipse.Margin.Top);
+            return pos + new Point(@ellipse.Width, @ellipse.Height) / 2;
+        }
+        public bool SetPos(Shape shape, int x, int y) {
+            var old = GetPos(shape);
+            if (old == null) return false;
+
+            var ellipse = (Ellipse) shape;
+            Point delta = new Point(x, y) - (Point) old;
+            ellipse.Margin = new Thickness(ellipse.Margin.Left + delta.X, ellipse.Margin.Top + delta.Y);
+
+            return true;
         }
     }
 }

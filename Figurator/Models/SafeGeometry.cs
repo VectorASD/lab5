@@ -1,10 +1,12 @@
 ﻿using Avalonia.Media;
+using Figurator.Models.Shapes;
 using System;
 
 namespace Figurator.Models {
     public class SafeGeometry: ForcePropertyChange, ISafe {
-        private Geometry geom = Geometry.Parse("");
-        private string geom_str = ""; // Нет внутри Geometry метода Stringify :/// :((( ;'-{{{
+        private Geometry geom = new GeometryShake();
+        // private string geom_str = ""; // Нет внутри Geometry метода Stringify :/// :((( ;'-{{{
+        // А теперь есть)))
         private bool valid = true;
         private readonly Action<object?>? hook;
         private readonly object? inst;
@@ -35,17 +37,16 @@ namespace Figurator.Models {
         public void Set(string str) {
             Geometry data;
             try {
-                data = Geometry.Parse(str);
+                data = Geometry.MyParse(str);
             } catch { Upd_valid(false); return; }
 
             geom = data;
-            geom_str = str;
             Upd_valid(true);
         }
 
         public string Value {
             // get { Re_check(); return Geometry.Stringify(geom); } ЧЁ?!?!?!?! Нет Stringify??!!?!?! :/// А я хотел эллипс вскрыть потом :((( БОООООООЛЬ!!!!! Пэйны (из Наруто) аж позавидовали! XD
-            get { Re_check(); return geom_str; }
+            get { Re_check(); return geom.Stringify(); }
             set {
                 Set(value);
                 UpdProperty(nameof(Color));

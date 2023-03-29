@@ -305,5 +305,10 @@ namespace Figurator.Models {
             }
             return sb.ToString().Trim();
         }
+
+        // Странно, почему оригинальный Split() работает, как обычный Split(' '),
+        // ведь во всех языках (по крайней мере в тех, которые я видел до C#) он
+        // игнорирует добавления в ответ пустых строк.
+        public static string[] NormSplit(this string str) => str.TrimAll().Split(' ');
     }
 }

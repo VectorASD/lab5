@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using System.Collections.Generic;
@@ -36,13 +37,10 @@ namespace Figurator.Models.Shapes {
             };
         }
         public bool Load(Mapper map, Shape shape) {
-            if (shape is not Polygon @polygon) return false;
-            if (@polygon.Name == null || !@polygon.Name.StartsWith("sn_")) return false;
+            if (shape is not Polygon @polygon) return false;;
             if (@polygon.Stroke == null || @polygon.Fill == null) return false;
 
             if (map.GetProp(PDots) is not SafePoints @dots) return false;
-
-            map.SetProp(PName, @polygon.Name[3..]);
 
             @dots.Set((Points) @polygon.Points);
 
@@ -83,6 +81,27 @@ namespace Figurator.Models.Shapes {
                 Fill = @fillColor,
                 StrokeThickness = @thickness
             };
+        }
+
+
+
+        public Point? GetPos(Shape shape) { // Центр многоугольника
+            if (shape is not Polygon @polygon) return null;
+            Point sum = new();
+            foreach (var pos in @polygon.Points) sum += pos;
+            return sum / @polygon.Points.Count;
+        }
+        public bool SetPos(Shape shape, int x, int y) {
+            var old = GetPos(shape);
+            if (old == null) return false;
+
+            var polygon = (Polygon) shape;
+            Point delta = new Point(x, y) - (Point) old;
+            Points upd = new(); // По сути AvaloniaList<Point>
+            for (int i = 0; i < polygon.Points.Count; i++) upd.Add(polygon.Points[i] + delta);
+            polygon.Points = upd; // К сожелению polygon.Points[i] += delta; не обновляет фигуру, т.к. туть нет наблюдателя :/
+
+            return true;
         }
     }
 }

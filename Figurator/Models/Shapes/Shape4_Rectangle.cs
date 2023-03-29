@@ -45,14 +45,11 @@ namespace Figurator.Models.Shapes {
         }
         public bool Load(Mapper map, Shape shape) {
             if (shape is not Rectangle @rect) return false;
-            if (@rect.Name == null || !@rect.Name.StartsWith("sn_")) return false;
             if (@rect.Stroke == null || @rect.Fill == null) return false;
 
             if (map.GetProp(PStartDot) is not SafePoint @start) return false;
             if (map.GetProp(PWidth) is not SafeNum @width) return false;
             if (map.GetProp(PHeight) is not SafeNum @height) return false;
-
-            map.SetProp(PName, @rect.Name[3..]);
 
             @start.Set(new Point(@rect.Margin.Left, @rect.Margin.Top));
             @width.Set((short) @rect.Width);
@@ -101,6 +98,24 @@ namespace Figurator.Models.Shapes {
                 Fill = @fillColor,
                 StrokeThickness = @thickness
             };
+        }
+
+
+
+        public Point? GetPos(Shape shape) { // Центр прямоугольника
+            if (shape is not Rectangle @rect) return null;
+            Point pos = new(@rect.Margin.Left, @rect.Margin.Top);
+            return pos + new Point(@rect.Width, @rect.Height) / 2;
+        }
+        public bool SetPos(Shape shape, int x, int y) {
+            var old = GetPos(shape);
+            if (old == null) return false;
+
+            var rect = (Rectangle) shape;
+            Point delta = new Point(x, y) - (Point) old;
+            rect.Margin = new Thickness(rect.Margin.Left + delta.X, rect.Margin.Top + delta.Y);
+
+            return true;
         }
     }
 }

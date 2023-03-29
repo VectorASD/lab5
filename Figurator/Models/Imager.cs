@@ -1,7 +1,9 @@
-﻿using Avalonia.Media;
+﻿using Avalonia;
+using Avalonia.Media;
 using Figurator.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -11,13 +13,13 @@ using Color = Avalonia.Media.Color;
 namespace Figurator.Models {
     public class Imager {
         // Временно подключил все цвета, что только есть в авалонии (имеют словесное название). Checkbox глючит, но пользоваться ещё можно)))
-        public readonly static string[] colors = new Colors().GetType().GetProperties().Select(x => x.Name).ToArray();
-        /* public readonly static string[] colors = new[] {
+        // public readonly static string[] colors = new Colors().GetType().GetProperties().Select(x => x.Name).ToArray();
+        public readonly static string[] colors = new[] {
             "Yellow", "Blue", "Green", "Red",
             "Orange", "Brown", "Pink", "Aqua",
             "Lime",
             "White", "LightGray", "DarkGray", "Black"
-        };*/
+        };
         private readonly static byte[][] rgbs = colors.Select(Color.Parse).Select(x => new byte[] { x.R, x.G, x.B }).ToArray();
 
         private unsafe static void Dithering(BitmapData bd) {
@@ -39,7 +41,11 @@ namespace Figurator.Models {
                     // Плохо
 
                     // Евклидово расстояние в цветовом RGB-кубе:
-                    int dist = Rd * Rd + Gd * Gd + Bd * Bd; // 0 .. 255^2*3
+                    // int dist = Rd * Rd + Gd * Gd + Bd * Bd; // 0 .. 255^2*3
+                    // Получше
+
+                    // Евклидово расстояние в цветовом RGB-кубе + подбитие коэффициентов:
+                    int dist = (int)(Rd * Rd * 0.299 + Gd * Gd * 0.587 + Bd * Bd * 0.114); // 0 .. 255^2
                     // Получше
 
                     if (dist < min_dist) {
@@ -265,8 +271,29 @@ namespace Figurator.Models {
             return buff.Count;
         }
 
+
+        private unsafe static void Contrast(BitmapData bd, int contrast) {
+            int size = bd.Width * bd.Height;
+            var data = (byte*) bd.Scan0;
+
+            int midBright = 0;
+            byte *d = data;
+            for (int i = 0; i < size; i++) midBright += *d++ * 77 + *d++ * 150 + *d++ * 29;
+            midBright /= 256 * size / 3;
+
+            var buf = new byte[256];
+            for (int i = 0; i < 256; i++) {
+                int a = (((i - midBright) * contrast) >> 8) + midBright;
+                buf[i] = a < 0 ? (byte) 0 : a > 255 ? (byte) 255 : (byte) a;
+            }
+            for (var i = data; i < data + size * 3; i++) *i = buf[*i];
+        }
+
         public static void Import() {
-            string name = "Parrots.jpg";
+            string name = "Export.png"; // "Parrots.jpg";
+            //int threshold_start = 30, threshold_step = 10;
+            // int threshold_start = 10, threshold_step = 5;
+
             if (!File.Exists("../../../" + name)) { Log.Write(name + " не обнаружен"); return; }
             var bmp = new Bitmap("../../../" + name);
             var w = bmp.Width;
@@ -274,15 +301,17 @@ namespace Figurator.Models {
             Log.Write("Size: " + w + "x" + h);
             BitmapData bd = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
+            Contrast(bd, 256*2);
+
             try { Dithering(bd); }
             catch (Exception e) { Log.Write("Error: " + e); return; }
 
-            try {
-                int threshold = 30;
+            /* try {
+                int threshold = threshold_start;
                 while (true) {
-                    int ress = BurrDestroyer(bd);
-                    if (ress == 0) break;
-                    Log.Write("Заусенцев слопано: " + ress);
+                    // int ress = BurrDestroyer(bd);
+                    // if (ress == 0) break;
+                    // Log.Write("Заусенцев слопано: " + ress);
 
                     var res = NoiseDestroyer(bd, threshold);
 
@@ -293,9 +322,9 @@ namespace Figurator.Models {
 
                     if (res.nops == 0) break;
                     if (res.yeahs == 0) { Log.Write("  Шумоподавитель завис! ;'-}"); return; }
-                    threshold += 10;
+                    threshold += threshold_step;
                 }
-            } catch (Exception e) { Log.Write("Error: " + e); return; }
+            } catch (Exception e) { Log.Write("Error: " + e); return; } */
 
             bmp.UnlockBits(bd);
             bmp.Save("../../../Res.png", ImageFormat.Png);

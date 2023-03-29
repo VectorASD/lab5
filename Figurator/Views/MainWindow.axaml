@@ -55,7 +55,6 @@
 				<MenuItem Header="Экспортировать в XML" Command="{Binding Export}" CommandParameter="XML"/>
 			</MenuItem>
 			<MenuItem Header="Импортировать" Name="menuImport">
-				<MenuItem Header="Импортировать из PNG" Command="{Binding Import}" CommandParameter="PNG"/>
 				<MenuItem Header="Импортировать из JSON" Command="{Binding Import}" CommandParameter="JSON"/>
 				<MenuItem Header="Импортировать из XML" Command="{Binding Import}" CommandParameter="XML"/>
 			</MenuItem>
@@ -80,7 +79,7 @@
 			<Border Grid.Column="1" Classes="b">
 				<Panel Background="AliceBlue">
 					<TextBlock Text="{Binding Logg}" IsVisible="{Binding ServiceVisible}"/>
-					<Canvas Name="canvas" Cursor="Hand" Tapped="CanvasTap"/>
+					<Canvas Name="canvas" Cursor="Hand" DragDrop.AllowDrop="True"/>
 				</Panel>
 			</Border>
 			<Border Grid.Column="2" Classes="b">

@@ -4,6 +4,7 @@ using Figurator.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Figurator.Models.Shapes {
     public class Transformator {
@@ -143,6 +144,17 @@ namespace Figurator.Models.Shapes {
                 }
 
             shape.RenderTransform = group;
+        }
+
+        
+
+        public static ScaleTransform GetScale(Shape shape) {
+            if (shape.RenderTransform is not TransformGroup @group) shape.RenderTransform = @group = new TransformGroup();
+            foreach (var el in @group.Children)
+                if (el is ScaleTransform @res) return @res;
+            var res2 = new ScaleTransform(1, 1);
+            group.Children.Add(res2);
+            return res2;
         }
     }
 }

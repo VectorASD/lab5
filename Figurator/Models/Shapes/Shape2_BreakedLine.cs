@@ -1,7 +1,12 @@
 ﻿using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using DynamicData;
+using Figurator.ViewModels;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using static Figurator.Models.Shapes.PropsN;
 
 namespace Figurator.Models.Shapes {
@@ -34,12 +39,9 @@ namespace Figurator.Models.Shapes {
         }
         public bool Load(Mapper map, Shape shape) {
             if (shape is not Polyline @polyline) return false;
-            if (@polyline.Name == null || !@polyline.Name.StartsWith("sn_")) return false;
             if (@polyline.Stroke == null) return false;
 
             if (map.GetProp(PDots) is not SafePoints @dots) return false;
-
-            map.SetProp(PName, @polyline.Name[3..]);
 
             @dots.Set((Points) @polyline.Points);
 
@@ -76,6 +78,29 @@ namespace Figurator.Models.Shapes {
                 Stroke = @color,
                 StrokeThickness = @thickness
             };
+        }
+
+
+
+        public Point? GetPos(Shape shape) { // Центр ломанной
+            if (shape is not Polyline @polyline) return null;
+            Point sum = new();
+            foreach (var pos in @polyline.Points) sum += pos;
+            return sum / @polyline.Points.Count;
+        }
+        public bool SetPos(Shape shape, int x, int y) {
+            var old = GetPos(shape);
+            if (old == null) return false;
+
+            var polyline = (Polyline) shape;
+            Point delta = new Point(x, y) - (Point) old;
+            // Log.Write("Old poly: " + Utils.Obj2json(polyline.Points));
+            Points upd = new(); // По сути AvaloniaList<Point>
+            for (int i = 0; i < polyline.Points.Count; i++) upd.Add(polyline.Points[i] + delta);
+            // Log.Write("New poly: " + Utils.Obj2json(upd));
+            polyline.Points = upd; // К сожелению polyline.Points[i] += delta; не обновляет фигуру, т.к. туть нет наблюдателя :/
+            
+            return true;
         }
     }
 }
