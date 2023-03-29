@@ -9,6 +9,7 @@ using Avalonia.Media;
 using System.Text.Json;
 using Figurator.ViewModels;
 using System.Collections;
+using System.Diagnostics;
 
 namespace Figurator.Models {
     public static class Utils {
@@ -310,5 +311,21 @@ namespace Figurator.Models {
         // ведь во всех языках (по крайней мере в тех, которые я видел до C#) он
         // игнорирует добавления в ответ пустых строк.
         public static string[] NormSplit(this string str) => str.TrimAll().Split(' ');
+
+        private static string GetStackInfo() {
+            var st = new StackTrace();
+            var sb = new StringBuilder();
+            for (int i = 1; i < 11; i++) {
+                var frame = st.GetFrame(i);
+                if (frame == null) continue;
+
+                var method = frame.GetMethod();
+                if (method == null || method.ReflectedType == null) continue;
+
+                sb.Append(method.ReflectedType.Name + " " + method.Name + " | ");
+                if (i == 5) sb.Append("\n    ");
+            }
+            return sb.ToString();
+        }
     }
 }

@@ -60,21 +60,6 @@ namespace Figurator.ViewModels {
 
         private Shape? animated_part = null;
 
-        private string GetStackInfo() {
-            var st = new StackTrace();
-            var sb = new StringBuilder();
-            for (int i = 1; i < 11; i++) {
-                var frame = st.GetFrame(i);
-                if (frame == null) continue;
-                
-                var method = frame.GetMethod();
-                if (method == null || method.ReflectedType == null) continue;
-
-                sb.Append(method.ReflectedType.Name + " " + method.Name + " | ");
-                if (i == 5) sb.Append("\n    ");
-            }
-            return sb.ToString();
-        }
         private void Update() {
             bool valid = map.ValidInput();
             bool valid2 = map.ValidName();
@@ -159,7 +144,22 @@ namespace Figurator.ViewModels {
                 // Log.Write("PointerWheelChanged: " + (e.Source == null ? "null" : e.Source.GetType().Name) + " delta: " + e.Delta);
                 if (e.Source != null && e.Source is Shape @shape) map.WheelMove(@shape, e.Delta.Y);
             };
+
+            var panel = canv.Parent;
+            if (panel == null) return;
+            panel.AddHandler(DragDrop.DropEvent, map.Drop);
+            panel.AddHandler(DragDrop.DragOverEvent, map.DragOver);
+            panel.AddHandler(DragDrop.DragEnterEvent, (object? sender, DragEventArgs e) => DropboxVisible = true);
+            mw.AddHandler(DragDrop.DragLeaveEvent, (object? sender, DragEventArgs e) => DropboxVisible = false); // Не работает :/
+            panel.AddHandler(DragDrop.DropEvent, (object? sender, DragEventArgs e) => {
+                Shape[]? beginners = map.Drop(sender, e);
+                foreach (var beginner in beginners) canv.Children.Add(beginner);
+                Update();
+                DropboxVisible = false; // Работает ;'-}
+            });
         }
+        bool dropbox_visible = false;
+        public bool DropboxVisible { get => dropbox_visible; set => this.RaiseAndSetIfChanged(ref dropbox_visible, value); }
 
         public int SelectedShaper {
             get => shaper_n;

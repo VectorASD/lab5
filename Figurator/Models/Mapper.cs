@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Figurator.Models.Shapes;
 using Figurator.ViewModels;
@@ -8,6 +9,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using static Figurator.Models.Shapes.PropsN;
@@ -246,15 +248,17 @@ namespace Figurator.Models {
             }
         }
 
-        public Shape[]? Import(bool is_xml) {
+        public Shape[]? Import(bool is_xml, object? content = null) {
             string name = is_xml ? "Export.xml" : "Export.json";
-            if (!File.Exists("../../../" + name)) { Log.Write(name + " не обнаружен"); return null; }
+            if (content == null) {
+                if (!File.Exists("../../../" + name)) { Log.Write(name + " не обнаружен"); return null; }
 
-            var data = File.ReadAllText("../../../" + name);
-            // Log.Write("data: " + (is_xml ? Utils.Xml2json(data) : data));
+                var data = File.ReadAllText("../../../" + name);
+                // Log.Write("data: " + (is_xml ? Utils.Xml2json(data) : data));
 
-            var json = is_xml ? Utils.Xml2obj(data) : Utils.Json2obj(data);
-            if (json is not List<object?> @list) { Log.Write("В начале " + name + " не список"); return null; }
+                content = is_xml ? Utils.Xml2obj(data) : Utils.Json2obj(data);
+            }
+            if (content is not List<object?> @list) { Log.Write("В начале " + name + " не список"); return null; }
 
             List<Shape> res = new();
             Clear();
@@ -393,6 +397,48 @@ namespace Figurator.Models {
             moved_shape = null;
 
             if (tapped) return ShapeTap(shape.Name ?? "");
+            return null;
+        }
+
+        public void DragOver(object? sender, DragEventArgs e) {
+            // Log.Write("DragOver " + e.DragEffects);
+            // Only allow Copy or Link as Drop Operations.
+            e.DragEffects &= DragDropEffects.Copy | DragDropEffects.Link;
+
+            // Only allow if the dragged data contains text or filenames.
+            if (!e.Data.Contains(DataFormats.Text) && !e.Data.Contains(DataFormats.FileNames)) e.DragEffects = DragDropEffects.None;
+        }
+
+        private Shape[]? GrandImport(string data) {
+            object? content = null;
+
+            try { content = Utils.Json2obj(data); } catch { }
+            if (content != null) return Import(false, content);
+
+            try { content = Utils.Xml2obj(data); } catch { }
+            if (content != null) return Import(true, content);
+
+            Log.Write("Не получилось разпознать тип данных :/ Нужен JSON, либо XML");
+            return null;
+        }
+
+        public Shape[]? Drop(object? sender, DragEventArgs e) {
+            // Log.Write("Drop");
+            if (e.Data.Contains(DataFormats.Text)) {
+                var data = e.Data.GetText();
+                if (data != null) return GrandImport(data);
+            }
+            
+            if (e.Data.Contains(DataFormats.FileNames)) {
+                var list = e.Data.GetFileNames();
+                if (list == null) return null;
+
+                var files = list.ToArray();
+                if (files.Length == 0) return null;
+
+                return GrandImport(File.ReadAllText(files[0]));
+            }
+
             return null;
         }
     }
